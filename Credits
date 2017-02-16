@@ -1,0 +1,9 @@
+Credits
+
+Libraries
+    1) moment.js - library used to convert a time accross a timezone and a from 12 hour clock to a 24 hour clock and vice verse
+    2) suncalc library(Vladimir Agafonkin) - used to get the position of the sun and moon
+
+Contributers -add your name here if you'd like
+    0) name - contribution description
+    
