@@ -26,21 +26,81 @@
     }
 
 
-    //enable/disable drop-down am/pm selection
+    /*
+    This function will enable or disable the am/pm drop-down selection
+    if the user changes the clock type to or from 12 to 24 hour.
+    This function will convert the time drop-down boxes to 12hr or 24hr format
+    if the user changes the clock type to or from 12 to 24 hour.
+    */
     function updateClockType()
     {
+      //grab the hour selection box
+      var hourDropDown=document.getElementById("hour");
+
+      //grab the selected hour on page
+      var hour=document.getElementById("hour").value;
+
+      //check which clock type is selected(12 or 24)
       if(checkClockType()=="12")
       {
+        //if clock type is 12 enable the am/pm selection box
         document.getElementById("ampm").disabled=false;
+
+        //delete options from hour selection box
+        for(var i=hourDropDown.length; i>=0; i--)
+        {
+          hourDropDown.remove(i);
+        }
+
+        //create 12am/12pm option and add to hour selection
+        var option = document.createElement("option");
+        option.value="12";
+        option.text="12";
+        hourDropDown.add(option);
+
+        //create 1-11am/pm options and add to hour selection
+        for(var i=1; i<=11; i++)
+        {
+          option = document.createElement("option");
+          option.value=i;
+          option.text=i;
+          hourDropDown.add(option);
+        }
+
+        //create a moment using the selected hour and convert to 12 hour format
+        var hourMoment=moment(hour,"HH");
+        document.getElementById("hour").value=parseInt(hourMoment.clone().format("hh"));
+        document.getElementById("ampm").value=hourMoment.format("a").charAt(0);
       }
       else
       {
+        //if clock type is 24 disable the am/pm selection box
         document.getElementById("ampm").disabled=true;
+
+        //delete options from hour selection box
+        for(var i=hourDropDown.length; i>=0; i--)
+        {
+          hourDropDown.remove(i);
+        }
+
+        //create 0-23 hour options and add to hour selection
+        var option;
+        for(var i=0; i<=23; i++)
+        {
+          option = document.createElement("option");
+          option.text =i;
+          hourDropDown.add(option);
+        }
+
+        //create a moment from the selected hour and selected am/pm
+        //and convert to 24 hour format.
+        var hourMoment=moment(hour+" "+document.getElementById("ampm").value,"hh a");
+        document.getElementById("hour").value=parseInt(hourMoment.clone().format("HH"));
       }
-      myFunc();
     }
 
-    //determine which radio button (12 or 24) is selected and return
+    //This function will determine which radio button for clock
+    //type (12 or 24) is checked and return
     function checkClockType() {
       if(document.getElementById("clockType12").checked) {
         return "12";
@@ -48,6 +108,24 @@
       else {
         return "24";
       }
+    }
+
+    /*
+    This function will update the day selection options (0-31) if the user
+    changes the month selection.
+    */
+    function handleMonthChange() {
+      var day=document.getElementById("day").value;
+      var month=document.getElementById("month").value;
+      var year=document.getElementById("year").value;
+
+      var daysInMonth=moment(month+"-"+year, "MM-YYYY").daysInMonth()
+      if(day>daysInMonth)
+      {
+        day=daysInMonth;
+        document.getElementById("day").value=day;
+      }
+      myFunc();
     }
 
     function drawMoon(timeAndDate,lat, lon)
@@ -261,8 +339,10 @@
     function myFunc()
     {
       //grab vars from page
-      var lat=document.getElementById("lat").value;
-      var lon=document.getElementById("lon").value;
+      var latDeg=document.getElementById("latDeg").value;
+      var latMin=document.getElementById("latMin").value;
+      var lonDeg=document.getElementById("lonDeg").value;
+      var lonMin=document.getElementById("lonMin").value;
       var timezone=parseInt(document.getElementById("timezone").value);
       var day=document.getElementById("day").value;
       var month=document.getElementById("month").value;
@@ -272,6 +352,13 @@
       var hour=document.getElementById("hour").value;
       var min=document.getElementById("min").value;
       var ampm=document.getElementById("ampm").value;
+
+      //calculate lattitude from lattitude grees and minutes
+      var lat=parseInt(latDeg)+latMin/60.0
+      //console.log("lattitude: "+lat);
+
+      var lon=parseInt(lonDeg)+lonMin/60.0
+      //console.log("longitude: "+lon);
 
       var currentMoment;
 
@@ -285,6 +372,7 @@
       }
 
       currentMoment.utcOffset(timezone, true);
+
 
       //var testStr="time: "+currentMoment.clone().format("M/D/YYYY h:ma Z");
       //document.getElementById("testpane").innerHTML=testStr;
@@ -487,16 +575,46 @@
     </script>
   </head>
   <body>
-    <h1>UnNamed App</h1>
+    <h1>Unnamed App</h1>
 
     <!--location line-->
     Location:
-    <input type="text" onchange="myFunc()" id="lat" size="5" value="41.56" placeholder="latitude">
+    <select onchange="myFunc()" id="latDeg">
+      <script>
+        for(var i=0; i<=89;i++)
+        {
+          document.write('<option value="'+i+'">'+i+'</option>');
+        }
+      </script>
+    </select>°
+    <select onchange="myFunc()" id="latMin">
+      <script>
+        for(var i=0; i<=59;i++)
+        {
+          document.write('<option value="'+i+'">'+i+'</option>');
+        }
+      </script>
+    </select>'
     <select onchange="myFunc()" id="vHemi">
       <option value="n">N</option>
       <option value="s">S</option>
     </select>
-    <input type="text" onchange="myFunc()" id="lon" size="5" value ="88.23" placeholder="longitude">
+    <select onchange="myFunc()" id="lonDeg">
+      <script>
+        for(var i=0; i<=179;i++)
+        {
+          document.write('<option value="'+i+'">'+i+'</option>');
+        }
+      </script>
+    </select>°
+    <select onchange="myFunc()" id="lonMin">
+      <script>
+        for(var i=0; i<=59;i++)
+        {
+          document.write('<option value="'+i+'">'+i+'</option>');
+        }
+      </script>
+    </select>'
     <select onchange="myFunc()" id="hHemi">
       <option value="w">W</option>
       <option value="e">E</option>
@@ -514,12 +632,43 @@
 
     <!--Date line-->
     Date:
-    <input type="text" onchange="myFunc()" id="month" size="2" value="01" placeholder="Month">
+    <select onchange="handleMonthChange()" id="month">
+      <script>
+        for(var i=1; i<=12;i++)
+        {
+          document.write('<option value="'+i+'">'+i+'</option>');
+        }
+      </script>
+    </select>
     <input type="text" onchange="myFunc()" id="day" size="2" value="01" placeholder="Day">
-    <input type="text" onchange="myFunc()" id="year" size="4" value="2017" placeholder="Year">
+    <select onchange="myFunc()" id="year">
+      <script>
+        for(var i=1990; i<=2025;i++)
+        {
+          document.write('<option value="'+i+'">'+i+'</option>');
+        }
+      </script>
+    </select>
       Time
-    <input type="text" onchange="myFunc()" id="hour" size="2" value="12" placeholder="hr">
-    <input type="text" onchange="myFunc()" id="min" size="2" value="00" placeholder="00">
+    <!--<input type="text" onchange="myFunc()" id="hour" size="2" value="12" placeholder="hr">-->
+    <!--<input type="text" onchange="myFunc()" id="min" size="2" value="00" placeholder="00">-->
+    <select onchange="myFunc()" id="hour">
+      <script>
+          document.write('<option value="12">12</option>');
+          for(var i=1; i<=11;i++)
+          {
+            document.write('<option value="'+i+'">'+i+'</option>');
+          }
+      </script>
+    </select>
+    <select onchange="myFunc()" id="min">
+      <script>
+        for(var i=0; i<=59;i++)
+        {
+          document.write('<option value="'+i+'">'+i+'</option>');
+        }
+      </script>
+    </select>
     <select id="ampm" onchange="myFunc()">
       <option value="a">AM</option>
       <option value="p">PM</option>
