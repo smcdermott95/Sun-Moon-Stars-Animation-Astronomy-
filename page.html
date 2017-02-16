@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://rawgit.com/mourner/suncalc/master/suncalc.js" type="text/javascript">
+    </script>
+    <script src="moment-with-locales.js" type="text/javascript">
+    </script>
+
+    <title>unnamed App</title>
+    <script>
+    var playSecondInterval=120;
+
+    //convert altitude angle(-30 to +90) to pixel y-coordinate on the canvas
+    function yCoord(coord)
+    {
+      var c = document.getElementById("myCanvas");
+      return -c.height*.75/90*coord+.75*c.height;
+    }
+
+    //convert the azimuth angle (0 to 360 degrees east of north) to
+    //an x-coordinate on the canvas
+    function xCoord(coord)
+    {
+      var c = document.getElementById("myCanvas");
+      return coord/360*c.width;
+    }
+
+
+    //enable/disable drop-down am/pm selection
+    function updateClockType()
+    {
+      if(checkClockType()=="12")
+      {
+        document.getElementById("ampm").disabled=false;
+      }
+      else
+      {
+        document.getElementById("ampm").disabled=true;
+      }
+      myFunc();
+    }
+
+    //determine which radio button (12 or 24) is selected and return
+    function checkClockType() {
+      if(document.getElementById("clockType12").checked) {
+        return "12";
+      }
+      else {
+        return "24";
+      }
+    }
+
+    function drawMoon(timeAndDate,lat, lon)
+    {
+      var moonPos=SunCalc.getMoonPosition(/*Date*/ timeAndDate, /*Number*/ lat, /*Number*/ lon);
+      moonAlt=moonPos.altitude*180/Math.PI;
+      moonAzi=moonPos.azimuth*180/Math.PI+180;
+
+      //adjustment for southern hemisphere
+      if(lat<0)
+      {
+        moonAzi=(moonAzi+180)%360;
+      }
+
+      var c = document.getElementById("myCanvas");
+      var ctx = c.getContext("2d");
+      ctx.beginPath();
+      ctx.arc(xCoord(moonAzi),yCoord(moonAlt),8,0,2*Math.PI);
+      ctx.strokeStyle = '#990000';
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.closePath();
+
+      /*
+      var data=document.getElementById("testpane").innerHTML;
+      data=data+"<br>"+hour+":"+min+"    "+(moonAzi+" ").substring(0,5)+","+(moonAlt+" ").substring(0,5);
+      document.getElementById("testpane").innerHTML=data;
+      */
+
+
+      //var data=timeAndDate.getHours()+":"+timeAndDate.getMinutes()+" "+(moonAzi+" ").substring(0,5)+","+(moonAlt+" ").substring(0,5);
+      //document.getElementById("testpane").innerHTML=data;
+    }
+
+    function plotPoints(lat, lon, momentIn)
+    {
+      var c = document.getElementById("myCanvas");
+      var ctx = c.getContext("2d");
+      var data="";
+      var momentCounter=moment(momentIn.clone().format("MM/DD/YYYY"),"MM/DD/YYYY");
+      var timeAndDate;
+      var alt, azu;
+
+      //plot 24 points, one for every hour
+      for(count=0;count<=23; count++)
+      {
+        timeAndDate=momentCounter.clone().toDate();
+        var sunPos=SunCalc.getPosition(/*Date*/ timeAndDate, /*Number*/ lat, /*Number*/ lon);
+
+        alt=sunPos.altitude*180/Math.PI;
+        azu=sunPos.azimuth*180/Math.PI+180;
+
+        //adjust azimuth if in southern hemisphere
+        if(lat<0)
+        {
+          azu=(azu+180)%360
+        }
+
+        //print table of angles
+        //data+="hour: "+timeAndDate.toString()+"   "+azu+","+alt+"; <br>";
+        //document.getElementById("testpane").innerHTML=data;
+        ctx.beginPath();
+        ctx.arc(xCoord(azu),yCoord(alt),3,0,2*Math.PI);
+        ctx.strokeStyle = '#990000';
+        ctx.stroke();
+        ctx.closePath();
+
+        momentCounter.add(1,'h');
+      }
+    }
+
+
+    function sin(angle)
+    {
+      return Math.sin(Math.PI/180*angle);
+    }
+
+    function cos(angle)
+    {
+      return Math.cos(Math.PI/180*angle);
+    }
+
+    //seed rng
+    //http://indiegamr.com/generate-repeatable-random-numbers-in-js/
+    Math.seed=6;
+    Math.seededRandom=function(max,min){
+      max=max||1;
+      min=min||0;
+
+      Math.seed = (Math.seed * 9301 + 49297) % 233280;
+      var rnd = Math.seed / 233280;
+      return min + rnd * (max - min);
+    }
+
+    function generateStars(timeAndDate,lat,lon,alt,azi)
+    {
+      var c = document.getElementById("myCanvas");
+      var ctx = c.getContext("2d");
+
+
+      var dec=[88,0];
+      var hourDisplacement=[6,2];
+
+      //generate random declination and hour displacements
+      Math.seed=6;
+      for(var count=0; count<120; count++)
+      {
+
+        dec.push(Math.seededRandom()*180-90);
+        hourDisplacement.push(Math.seededRandom()*24);
+      }
+
+      //calculate star altitde and azimuth for every RNG based declination
+      //and hour displacement in arrays.
+      for(var i=0; i<dec.length;i++)
+      {
+        var hour=(timeAndDate.getHours()+timeAndDate.getMinutes()/60+hourDisplacement[i])%24;
+        starAlt=180/Math.PI*Math.asin(cos(lat)*cos(hour*15)*cos(dec[i])+sin(lat)*sin(dec[i]));
+        starAzi=180/Math.PI*Math.acos((sin(starAlt)*sin(lat)-sin(dec[i]))/(cos(starAlt)*cos(lat)));
+
+        //star azimuth adjustment
+        if((hour*15)>180)
+        {
+          starAzi=360-starAzi;
+        }
+        starAzi=(starAzi+180)%360;
+
+
+        //adjustment for southern hemisphere
+        if(lat<0)
+        {
+            starAzi=(starAzi+180)%360;
+        }
+
+        //only draw stars with altitude above 0 degrees(above horizon)
+        if(starAlt>0)
+        {
+          ctx.beginPath();
+          ctx.arc(xCoord(starAzi),yCoord(starAlt),1,0,2*Math.PI);
+          ctx.fillStyle = 'white';
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+      //var data=(starAzi+" ").substring(0,5)+","+(starAlt+" ").substring(0,5);
+      //document.getElementById("testpane").innerHTML=data;
+    }
+
+    function now()
+    {
+      var momentNow=moment().utcOffset(parseInt(document.getElementById("timezone").value),false);
+
+      document.getElementById("month").value=momentNow.month()+1;
+      document.getElementById("day").value=momentNow.date();
+      document.getElementById("year").value=momentNow.year();
+
+      var hour;
+      if(checkClockType()=="12")
+      {
+        hour=momentNow.clone().format("h");
+        var ampm=momentNow.clone().format("a").charAt(0);
+        document.getElementById("ampm").value=ampm;
+      }
+      else {
+        hour=momentNow.hour();
+      }
+
+      document.getElementById("hour").value=hour;
+      document.getElementById("min").value=momentNow.minute();
+
+      myFunc();
+    }
+
+    function playInitialize()
+    {
+
+      //var momentNow=moment();
+      var month=document.getElementById("month").value;
+      var day=document.getElementById("day").value;
+      var year=document.getElementById("year").value;
+
+      var momentCounter=moment(month+"/"+day+"/"+year+" 0","M/D/YYYY H").utcOffset(timezone,true);
+
+      play(momentCounter);
+      //document.getElementById("playbutton").value="Stop";
+    }
+
+    function play(momentCounter)
+    {
+      if(checkClockType()=="12")
+      {
+        document.getElementById("hour").value=momentCounter.clone().format("h");
+        document.getElementById("ampm").value=momentCounter.clone().format("a").charAt(0);
+      }
+      else {
+        document.getElementById("hour").value=momentCounter.hour();
+      }
+
+      document.getElementById("min").value=momentCounter.minute();
+
+      myFunc();
+
+      momentCounter.add(playSecondInterval,"s");
+      if(momentCounter.hour()!=23||momentCounter.minute()<(60-playSecondInterval/60))
+      {
+        setTimeout(play,30, momentCounter);
+      }
+    }
+
+    function myFunc()
+    {
+      //grab vars from page
+      var lat=document.getElementById("lat").value;
+      var lon=document.getElementById("lon").value;
+      var timezone=parseInt(document.getElementById("timezone").value);
+      var day=document.getElementById("day").value;
+      var month=document.getElementById("month").value;
+      var year=document.getElementById("year").value;
+      var vHemi=document.getElementById("vHemi").value;
+      var hHemi=document.getElementById("hHemi").value;
+      var hour=document.getElementById("hour").value;
+      var min=document.getElementById("min").value;
+      var ampm=document.getElementById("ampm").value;
+
+      var currentMoment;
+
+      if(checkClockType()=="12")
+      {
+        currentMoment=moment(month+"/"+day+"/"+year+" "+hour+":"+min+" "+ampm+" "+timezone,"M/D/YYYY h:mm a");
+      }
+      else
+      {
+        currentMoment=moment(month+"/"+day+"/"+year+" "+hour+":"+min,"M/D/YYYY H:m");
+      }
+
+      currentMoment.utcOffset(timezone, true);
+
+      //var testStr="time: "+currentMoment.clone().format("M/D/YYYY h:ma Z");
+      //document.getElementById("testpane").innerHTML=testStr;
+
+
+      if(vHemi=="s")
+      {
+        lat=-1*lat;
+      }
+      if(hHemi=="w")
+      {
+        lon=-1*lon;
+      }
+
+
+
+      //Calculate Current sun position
+      //var currentTimeAndDate=new Date(year, month, day, hour, min);
+      var currentTimeAndDate=currentMoment.clone().toDate();
+      var currentSunPos=SunCalc.getPosition(/*Date*/ currentTimeAndDate, /*Number*/ lat, /*Number*/ lon);
+      currentAlt=currentSunPos.altitude*180/Math.PI;
+      currentAzu=currentSunPos.azimuth*180/Math.PI+180;
+
+      //adjustment for southern hemisphere
+      if(lat<0)
+      {
+        currentAzu=(currentAzu+180)%360;
+      }
+
+      //print table of azimuths and altitudes for debug
+      //document.getElementById("testpane").innerHTML=lat+","+lon;
+
+      //initialize canvas vars and clear
+      var c = document.getElementById("myCanvas");
+      var ctx = c.getContext("2d");
+
+      //draw sky color
+      ctx.beginPath();
+      var color="";
+      var grad=ctx.createLinearGradient(xCoord(0),yCoord(90),xCoord(0),yCoord(0));
+      if(currentAlt<-18)
+      {
+        color="#301860";
+        grad.addColorStop(0,"black");
+        grad.addColorStop(1,color);
+        ctx.fillStyle = grad;
+      }
+      else if(currentAlt<-12)
+      {
+        color="#00344d"
+        grad.addColorStop(0,"#301860");
+        grad.addColorStop(1,color);
+        ctx.fillStyle = grad;
+      }
+      else if(currentAlt<-6)
+      {
+        color="#006999"
+        grad.addColorStop(0,"#00344d");
+        grad.addColorStop(1,color);
+        ctx.fillStyle = grad;
+      }
+      else if(currentAlt<0)
+      {
+        color="#4dc6ff"
+        grad.addColorStop(0,"#006999");
+        grad.addColorStop(1,color);
+        ctx.fillStyle = grad;
+      }
+      else
+      {
+        color="#e6f7ff"
+        grad.addColorStop(0,"#9adfff");
+        grad.addColorStop(1,color);
+        ctx.fillStyle = grad;
+      }
+
+      ctx.fillRect(xCoord(0),yCoord(0),xCoord(360),-90*c.height/120);
+      ctx.closePath();
+
+      //draw 10-80 degree altitude lines, in 10 degree increments
+      for(count=10; count<=80; count=count+10)
+      {
+        ctx.beginPath();
+        ctx.moveTo(0,yCoord(count));
+        ctx.lineTo(xCoord(360),yCoord(count));
+        ctx.strokeStyle = '#555555';
+        ctx.stroke();
+        ctx.closePath();
+      }
+
+      //draw 180 degree azumith line
+      ctx.beginPath();
+      ctx.moveTo(xCoord(180),yCoord(0));
+      ctx.lineTo(xCoord(180),yCoord(90));
+      ctx.strokeStyle = '#800000';
+      ctx.stroke();
+      ctx.closePath();
+
+      //draw 90 and 270 degree azumith line
+      for(var i=90; i<=270; i+=180)
+      {
+        ctx.beginPath();
+        ctx.moveTo(xCoord(i),yCoord(0));
+        ctx.lineTo(xCoord(i),yCoord(90));
+        ctx.strokeStyle = '#555555';
+        ctx.stroke();
+        ctx.closePath();
+      }
+
+      //draw -6 to 0 degree altitude twilight box
+      ctx.beginPath();
+      ctx.fillStyle ='#0099cc';
+      ctx.fillRect(xCoord(0),yCoord(-6),xCoord(360),-6*c.height/120);
+      ctx.closePath();
+
+      //draw -12 to -6 degree altitude twilight box
+      ctx.beginPath();
+      ctx.fillStyle ='#003366';
+      ctx.fillRect(xCoord(0),yCoord(-12),xCoord(360),-6*c.height/120);
+      ctx.closePath();
+
+      //draw -18 to -12 degree altitude twilight box
+      ctx.beginPath();
+      ctx.fillStyle ='#0e2f44';
+      ctx.fillRect(xCoord(0),yCoord(-18),xCoord(360),-6*c.height/120);
+      ctx.closePath();
+
+      //draw -30 to -18 degree altitude night box
+      ctx.beginPath();
+      ctx.fillStyle ='#222222';
+      ctx.fillRect(xCoord(0),yCoord(-30),xCoord(360),-12*c.height/120);
+      ctx.closePath();
+
+      //draw 0 altitude degree line
+      ctx.beginPath();
+      ctx.moveTo(0,yCoord(0));
+      ctx.lineTo(xCoord(360),yCoord(0));
+      ctx.strokeStyle = '#800000';
+      ctx.stroke();
+      ctx.closePath();
+
+      //draw -18 to -6 degree altitude lines, in 6 degree increments
+      for(count=-18; count<=-6; count=count+6)
+      {
+        ctx.beginPath();
+        ctx.moveTo(0,yCoord(count));
+        ctx.lineTo(xCoord(360),yCoord(count));
+        ctx.strokeStyle = '#800000';
+        ctx.stroke();
+        ctx.closePath();
+      }
+
+      //plot 24 points for each hour
+      plotPoints(lat,lon,currentMoment);
+
+      //draw sun
+      ctx.beginPath();
+      ctx.arc(xCoord(currentAzu),yCoord(currentAlt),10,0,2*Math.PI);
+      ctx.strokeStyle = '#990000';
+      ctx.stroke();
+      ctx.fillStyle = '#ffff00';
+      ctx.fill();
+      ctx.closePath();
+
+      if(currentAlt<-6)
+      {
+        generateStars(currentTimeAndDate, lat, lon, currentAlt,currentAzu);
+      }
+      drawMoon(currentTimeAndDate,lat, lon);
+
+      //draw border
+      ctx.beginPath();
+      ctx.strokeStyle = '#800000';
+      ctx.strokeRect(0, 0, c.width, c.height);
+      ctx.closePath();
+
+      var sunTimes=SunCalc.getTimes(/*Date*/ currentTimeAndDate, /*Number*/ lat, /*Number*/ lon);
+      var sunrise=moment(sunTimes.sunrise).utcOffset(timezone,false);
+      var sunset=moment(sunTimes.sunset).utcOffset(timezone,false);
+      var dayLength=sunset.diff(sunrise, 'minutes')/60.0;
+      var sunriseStr;
+      var sunsetStr;
+
+      if(checkClockType()=="12")
+      {
+        sunriseStr=sunrise.format("h:mm a");
+        sunsetStr=sunset.format("h:mm a");
+      }
+      else {
+        sunriseStr=sunrise.format("H:mm");
+        sunsetStr=sunset.format("H:mm");
+      }
+      var sunTimesString="Sunrise: "+sunriseStr+" Sunset: "+sunsetStr+" Day Length: "+dayLength;
+      document.getElementById("infoPanel").innerHTML=sunTimesString;
+
+      //var data=hour+":"+min+"    "+(currentAzu+" ").substring(0,5)+","+(currentAlt+" ").substring(0,5);
+      //document.getElementById("testpane").innerHTML=data;
+
+    }
+    </script>
+  </head>
+  <body>
+    <h1>UnNamed App</h1>
+
+    <!--location line-->
+    Location:
+    <input type="text" onchange="myFunc()" id="lat" size="5" value="41.56" placeholder="latitude">
+    <select onchange="myFunc()" id="vHemi">
+      <option value="n">N</option>
+      <option value="s">S</option>
+    </select>
+    <input type="text" onchange="myFunc()" id="lon" size="5" value ="88.23" placeholder="longitude">
+    <select onchange="myFunc()" id="hHemi">
+      <option value="w">W</option>
+      <option value="e">E</option>
+    </select>
+    Timezone:
+    <select onchange="now()" id="timezone">
+      <script>
+        for(var i=-12; i<=12;i++)
+        {
+          document.write('<option value="'+i+'">'+i+'</option>');
+        }
+      </script>
+    </select>
+    <br>
+
+    <!--Date line-->
+    Date:
+    <input type="text" onchange="myFunc()" id="month" size="2" value="01" placeholder="Month">
+    <input type="text" onchange="myFunc()" id="day" size="2" value="01" placeholder="Day">
+    <input type="text" onchange="myFunc()" id="year" size="4" value="2017" placeholder="Year">
+      Time
+    <input type="text" onchange="myFunc()" id="hour" size="2" value="12" placeholder="hr">
+    <input type="text" onchange="myFunc()" id="min" size="2" value="00" placeholder="00">
+    <select id="ampm" onchange="myFunc()">
+      <option value="a">AM</option>
+      <option value="p">PM</option>
+    </select>
+    <!--<button type="button" onclick="myFunc()">Update</button>-->
+    <button type="button" onclick="now()">now</button>
+    <button type="button" id="playbutton" onclick="playInitialize()">Play</button>
+    <input type="radio" name="clockType" id="clockType12" value="12"  onclick="updateClockType()" checked>12hr
+    <input type="radio" name="clockType" id="clockType24" value="24" onclick="updateClockType()" >24hr
+    <p id="testpane">testpane</p>
+    <p id="infoPanel">info panel</p>
+
+    <canvas id="myCanvas" width="1200" height="600"></canvas>
+    <script>
+      myFunc();
+      now();
+    </script>
+    <br>
+
+  </body>
+</html>
