@@ -10,6 +10,16 @@
     <script>
     var playSecondInterval=120;
 
+    //set the start location to new york city, NY
+    function tempStartLocation()
+    {
+      document.getElementById("latDeg").value=40;
+      document.getElementById("latMin").value=43;
+      document.getElementById("lonDeg").value=74;
+      document.getElementById("lonMin").value=0;
+      document.getElementById("timezone").value=-5;
+    }
+
     //convert altitude angle(-30 to +90) to pixel y-coordinate on the canvas
     function yCoord(coord)
     {
@@ -88,6 +98,7 @@
         for(var i=0; i<=23; i++)
         {
           option = document.createElement("option");
+          option.value=i;
           option.text =i;
           hourDropDown.add(option);
         }
@@ -113,19 +124,48 @@
     /*
     This function will update the day selection options (0-31) if the user
     changes the month selection.
+    The var yesUpdate is a boolean. If true, myFunc() will be called to
+    update the HTML canbas
     */
-    function handleMonthChange() {
+    function handleMonthChange(yesUpdate) {
       var day=document.getElementById("day").value;
       var month=document.getElementById("month").value;
       var year=document.getElementById("year").value;
 
-      var daysInMonth=moment(month+"-"+year, "MM-YYYY").daysInMonth()
+      var daysInMonth=moment(month+"-"+year, "MM-YYYY").daysInMonth();
+
+      var dayDropDown=document.getElementById("day");
+
+      //delete options from day selection box
+      for(var i=dayDropDown.length; i>=0; i--)
+      {
+        dayDropDown.remove(i);
+      }
+
+      //create 0-daysInMonth options in day selection drop-down
+      //each option represents a date in a month
+      var option;
+      for(var i=1; i<=daysInMonth; i++)
+      {
+        option = document.createElement("option");
+        option.value =i;
+        option.text =i;
+        dayDropDown.add(option);
+      }
+
+      //if the date is greater than the number of days
+      //in updated month then set the day to the highest date in month
       if(day>daysInMonth)
       {
         day=daysInMonth;
-        document.getElementById("day").value=day;
       }
+      document.getElementById("day").value=day;
+
+      //update the canvas if true
+      if(yesUpdate)
+      {
       myFunc();
+      }
     }
 
     function drawMoon(timeAndDate,lat, lon)
@@ -280,6 +320,7 @@
       var momentNow=moment().utcOffset(parseInt(document.getElementById("timezone").value),false);
 
       document.getElementById("month").value=momentNow.month()+1;
+      handleMonthChange(false);
       document.getElementById("day").value=momentNow.date();
       document.getElementById("year").value=momentNow.year();
 
@@ -453,7 +494,7 @@
       ctx.closePath();
 
       //draw 10-80 degree altitude lines, in 10 degree increments
-      for(count=10; count<=80; count=count+10)
+      for(var count=10; count<=80; count=count+10)
       {
         ctx.beginPath();
         ctx.moveTo(0,yCoord(count));
@@ -515,7 +556,7 @@
       ctx.closePath();
 
       //draw -18 to -6 degree altitude lines, in 6 degree increments
-      for(count=-18; count<=-6; count=count+6)
+      for(var count=-18; count<=-6; count=count+6)
       {
         ctx.beginPath();
         ctx.moveTo(0,yCoord(count));
@@ -523,6 +564,23 @@
         ctx.strokeStyle = '#800000';
         ctx.stroke();
         ctx.closePath();
+      }
+
+      //draw direction labels
+      ctx.font = "14px Arial";
+      ctx.fillStyle="#ffffff"
+      ctx.fillText("South",c.width*.5,yCoord(90-5));
+      ctx.font = "14px Arial";
+      ctx.fillText("West",c.width*.75,yCoord(90-5));
+      ctx.font = "14px Arial";
+      ctx.fillText("East",c.width*.25,yCoord(90-5));
+
+      //draw degree labels
+      for(var count=10; count<=90; count=count+10)
+      {
+        ctx.font = "10px Arial";
+        ctx.fillStyle="#ffffff"
+        ctx.fillText(count+" deg",c.width*.95,yCoord(count-2));
       }
 
       //plot 24 points for each hour
@@ -632,7 +690,7 @@
 
     <!--Date line-->
     Date:
-    <select onchange="handleMonthChange()" id="month">
+    <select onchange="handleMonthChange(true)" id="month">
       <script>
         for(var i=1; i<=12;i++)
         {
@@ -640,7 +698,9 @@
         }
       </script>
     </select>
-    <input type="text" onchange="myFunc()" id="day" size="2" value="01" placeholder="Day">
+    <!--<input type="text" onchange="myFunc()" id="day" size="2" value="01" placeholder="Day">-->
+    <select onchange="myFunc()" id="day">
+    </select>
     <select onchange="myFunc()" id="year">
       <script>
         for(var i=1990; i<=2025;i++)
@@ -683,7 +743,7 @@
 
     <canvas id="myCanvas" width="1200" height="600"></canvas>
     <script>
-      myFunc();
+      tempStartLocation()
       now();
     </script>
     <br>
