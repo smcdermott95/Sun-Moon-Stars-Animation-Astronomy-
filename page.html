@@ -8,6 +8,18 @@
 
     <title>unnamed App</title>
     <script>
+    //declare 3 canvas contexts
+    //layer 1(bottom) is the sky color canvas
+    //layer 2(middle) is the lines and degree label canvas
+    //layer 3(top) is the canvas for the sun, moon and stars
+    var c1,skyCtx,graphCtx,sunMoonStarCtx;
+
+    //initialize arrays for star declination and hour displacement
+    //using values for north star (dec: 89)
+    //and arbitrary star above equator(dec: 0)
+    var starDeclination=[89,0];
+    var hourDisplacement=[6,2];
+
 
     //set the start location to new york city, NY
     function tempStartLocation()
@@ -20,19 +32,127 @@
     }
 
 
+    //set the canvas contexts and draw the lines and degree labels on the
+    //graph canvas
+    function initializeCanvases()
+    {
+      c1 = document.getElementById("skyCanvas");
+      skyCtx = c1.getContext("2d");
+      var c2 = document.getElementById("graphCanvas");
+      graphCtx = c2.getContext("2d");
+      var c3 = document.getElementById("sunMoonStarCanvas");
+      sunMoonStarCtx = c3.getContext("2d");
+
+      //draw 10-80 degree altitude lines, in 10 degree increments
+      for(var count=10; count<=80; count=count+10)
+      {
+        graphCtx.beginPath();
+        graphCtx.moveTo(0,yCoord(count));
+        graphCtx.lineTo(xCoord(360),yCoord(count));
+        graphCtx.strokeStyle = '#555555';
+        graphCtx.stroke();
+        graphCtx.closePath();
+      }
+
+      //draw 180 degree azimith line
+      graphCtx.beginPath();
+      graphCtx.moveTo(xCoord(180),yCoord(0));
+      graphCtx.lineTo(xCoord(180),yCoord(90));
+      graphCtx.strokeStyle = '#800000';
+      graphCtx.stroke();
+      graphCtx.closePath();
+
+      //draw 90 and 270 degree azimith line
+      for(var i=90; i<=270; i+=180)
+      {
+        graphCtx.beginPath();
+        graphCtx.moveTo(xCoord(i),yCoord(0));
+        graphCtx.lineTo(xCoord(i),yCoord(90));
+        graphCtx.strokeStyle = '#555555';
+        graphCtx.stroke();
+        graphCtx.closePath();
+      }
+
+      //draw -6 to 0 degree altitude twilight box
+      graphCtx.beginPath();
+      graphCtx.fillStyle ='#0099cc';
+      graphCtx.fillRect(xCoord(0),yCoord(-6),xCoord(360),-6*c1.height/120);
+      graphCtx.closePath();
+
+      //draw -12 to -6 degree altitude twilight box
+      graphCtx.beginPath();
+      graphCtx.fillStyle ='#003366';
+      graphCtx.fillRect(xCoord(0),yCoord(-12),xCoord(360),-6*c1.height/120);
+      graphCtx.closePath();
+
+      //draw -18 to -12 degree altitude twilight box
+      graphCtx.beginPath();
+      graphCtx.fillStyle ='#0e2f44';
+      graphCtx.fillRect(xCoord(0),yCoord(-18),xCoord(360),-6*c1.height/120);
+      graphCtx.closePath();
+
+      //draw -30 to -18 degree altitude night box
+      graphCtx.beginPath();
+      graphCtx.fillStyle ='#222222';
+      graphCtx.fillRect(xCoord(0),yCoord(-30),xCoord(360),-12*c1.height/120);
+      graphCtx.closePath();
+
+      //draw 0 altitude degree line
+      graphCtx.beginPath();
+      graphCtx.moveTo(0,yCoord(0));
+      graphCtx.lineTo(xCoord(360),yCoord(0));
+      graphCtx.strokeStyle = '#800000';
+      graphCtx.stroke();
+      graphCtx.closePath();
+
+      //draw -18 to -6 degree altitude lines, in 6 degree increments
+      for(var count=-18; count<=-6; count=count+6)
+      {
+        graphCtx.beginPath();
+        graphCtx.moveTo(0,yCoord(count));
+        graphCtx.lineTo(xCoord(360),yCoord(count));
+        graphCtx.strokeStyle = '#800000';
+        graphCtx.stroke();
+        graphCtx.closePath();
+      }
+
+      //draw direction labels
+      graphCtx.font = "14px Arial";
+      graphCtx.fillStyle="#ffffff"
+      graphCtx.fillText("South",c1.width*.5,yCoord(90-5));
+      graphCtx.font = "14px Arial";
+      graphCtx.fillText("West",c1.width*.75,yCoord(90-5));
+      graphCtx.font = "14px Arial";
+      graphCtx.fillText("East",c1.width*.25,yCoord(90-5));
+
+      //draw degree labels
+      for(var count=10; count<=90; count=count+10)
+      {
+        graphCtx.font = "10px Arial";
+        graphCtx.fillStyle="#ffffff"
+        graphCtx.fillText(count+" deg",c1.width*.95,yCoord(count-2));
+      }
+
+      //draw border
+      graphCtx.beginPath();
+      graphCtx.strokeStyle = '#800000';
+      graphCtx.strokeRect(0, 0, c1.width, c1.height);
+      graphCtx.closePath();
+    }
+
+
 
     //convert altitude angle(-30 to +90) to pixel y-coordinate on the canvas
     function yCoord(coord)
     {
-      var c = document.getElementById("myCanvas");
-      return -c.height*.75/90*coord+.75*c.height;
+      return -c1.height*.75/90*coord+.75*c1.height;
     }
+
     //convert the azimuth angle (0 to 360 degrees east of north) to
     //an x-coordinate on the canvas
     function xCoord(coord)
     {
-      var c = document.getElementById("myCanvas");
-      return coord/360*c.width;
+      return coord/360*c1.width;
     }
 
 
@@ -125,8 +245,6 @@
     }
 
 
-
-
     /*
     This function will update the day selection options (0-31) if the user
     changes the month selection.
@@ -195,15 +313,13 @@
       }
 
       //draw moon on canvas
-      var c = document.getElementById("myCanvas");
-      var ctx = c.getContext("2d");
-      ctx.beginPath();
-      ctx.arc(xCoord(moonAzimuth),yCoord(moonAltitude),8,0,2*Math.PI);
-      ctx.strokeStyle = '#990000';
-      ctx.stroke();
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.closePath();
+      sunMoonStarCtx.beginPath();
+      sunMoonStarCtx.arc(xCoord(moonAzimuth),yCoord(moonAltitude),8,0,2*Math.PI);
+      sunMoonStarCtx.strokeStyle = '#990000';
+      sunMoonStarCtx.stroke();
+      sunMoonStarCtx.fillStyle = '#ffffff';
+      sunMoonStarCtx.fill();
+      sunMoonStarCtx.closePath();
     }
 
 
@@ -214,8 +330,6 @@
     */
     function plotSunPoints(latitude, longitude, momentIn)
     {
-      var c = document.getElementById("myCanvas");
-      var ctx = c.getContext("2d");
 
       //A moment counter that will be incremented every hour
       var momentCounter=moment(momentIn.clone().format("MM/DD/YYYY"),"MM/DD/YYYY");
@@ -244,11 +358,11 @@
         }
 
         //draw the red circle/dots
-        ctx.beginPath();
-        ctx.arc(xCoord(sunHourAzimuth),yCoord(sunHourAltitude),3,0,2*Math.PI);
-        ctx.strokeStyle = '#990000';
-        ctx.stroke();
-        ctx.closePath();
+        sunMoonStarCtx.beginPath();
+        sunMoonStarCtx.arc(xCoord(sunHourAzimuth),yCoord(sunHourAltitude),3,0,2*Math.PI);
+        sunMoonStarCtx.strokeStyle = '#990000';
+        sunMoonStarCtx.stroke();
+        sunMoonStarCtx.closePath();
 
         //increment the moment object by an hour
         momentCounter.add(1,'h');
@@ -281,33 +395,32 @@
       return min + rnd * (max - min);
     }
 
-
-    //TODO make stars vary with longitude
-    function generateStars(timeAndDate,latitude,longitude,altitude,azimuth)
+    /*
+      This function pushes random values of declination and hour displacements
+      into the respective arrays for every star to be generated.
+    */
+    function initializeStarsArrays(numberOfStars)
     {
-      var c = document.getElementById("myCanvas");
-      var ctx = c.getContext("2d");
-
-
-      var dec=[88,0];
-      var hourDisplacement=[6,2];
-
       //generate random declination and hour displacements
       Math.seed=6;
-      for(var count=0; count<120; count++)
+      for(var count=0; count<numberOfStars; count++)
       {
 
-        dec.push(Math.seededRandom()*180-90);
+        starDeclination.push(Math.seededRandom()*180-90);
         hourDisplacement.push(Math.seededRandom()*24);
       }
+    }
 
+    //TODO 2) make stars vary with longitude
+    function drawStars(timeAndDate,latitude,longitude,altitude,azimuth)
+    {
       //calculate star altitde and azimuth for every RNG based declination
       //and hour displacement in arrays.
-      for(var i=0; i<dec.length;i++)
+      for(var i=0; i<starDeclination.length;i++)
       {
         var hour=(timeAndDate.getHours()+timeAndDate.getMinutes()/60+hourDisplacement[i])%24;
-        starAltitude=180/Math.PI*Math.asin(cos(latitude)*cos(hour*15)*cos(dec[i])+sin(latitude)*sin(dec[i]));
-        starAzimuth=180/Math.PI*Math.acos((sin(starAltitude)*sin(latitude)-sin(dec[i]))/(cos(starAltitude)*cos(latitude)));
+        starAltitude=180/Math.PI*Math.asin(cos(latitude)*cos(hour*15)*cos(starDeclination[i])+sin(latitude)*sin(starDeclination[i]));
+        starAzimuth=180/Math.PI*Math.acos((sin(starAltitude)*sin(latitude)-sin(starDeclination[i]))/(cos(starAltitude)*cos(latitude)));
 
         //star azimuth adjustment
         if((hour*15)>180)
@@ -326,11 +439,11 @@
         //only draw stars with altitude above 0 degrees(above horizon)
         if(starAltitude>0)
         {
-          ctx.beginPath();
-          ctx.arc(xCoord(starAzimuth),yCoord(starAltitude),1,0,2*Math.PI);
-          ctx.fillStyle = 'white';
-          ctx.fill();
-          ctx.closePath();
+          sunMoonStarCtx.beginPath();
+          sunMoonStarCtx.arc(xCoord(starAzimuth),yCoord(starAltitude),1,0,2*Math.PI);
+          sunMoonStarCtx.fillStyle = 'white';
+          sunMoonStarCtx.fill();
+          sunMoonStarCtx.closePath();
         }
       }
     }
@@ -377,7 +490,10 @@
 
       var momentCounter=moment(month+"/"+day+"/"+year+" 0","M/D/YYYY H").utcOffset(timezone,true);
 
+      //the number of seconds in the day that 1 frame in the animation will skip over
+      //ex:value of 120 means 1 frame in animation represents 2 minutes(120s) of the day
       var playSecondInterval=120;
+
       play(momentCounter,playSecondInterval);
       //document.getElementById("playbutton").value="Stop";
     }
@@ -468,165 +584,74 @@
       }
 
       //initialize canvas vars and clear
-      var c = document.getElementById("myCanvas");
-      var ctx = c.getContext("2d");
+
+      //clear skyCanvas
+      skyCtx.clearRect(0,0, c1.width, c1.height);
 
       //draw sky color
-      ctx.beginPath();
+      skyCtx.beginPath();
       var color="";
-      var grad=ctx.createLinearGradient(xCoord(0),yCoord(90),xCoord(0),yCoord(0));
+      var grad=skyCtx.createLinearGradient(xCoord(0),yCoord(90),xCoord(0),yCoord(0));
       if(sunAltitude<-18)
       {
         color="#301860";
         grad.addColorStop(0,"black");
         grad.addColorStop(1,color);
-        ctx.fillStyle = grad;
+        skyCtx.fillStyle = grad;
       }
       else if(sunAltitude<-12)
       {
         color="#00344d"
         grad.addColorStop(0,"#301860");
         grad.addColorStop(1,color);
-        ctx.fillStyle = grad;
+        skyCtx.fillStyle = grad;
       }
       else if(sunAltitude<-6)
       {
         color="#006999"
         grad.addColorStop(0,"#00344d");
         grad.addColorStop(1,color);
-        ctx.fillStyle = grad;
+        skyCtx.fillStyle = grad;
       }
       else if(sunAltitude<0)
       {
         color="#4dc6ff"
         grad.addColorStop(0,"#006999");
         grad.addColorStop(1,color);
-        ctx.fillStyle = grad;
+        skyCtx.fillStyle = grad;
       }
       else
       {
         color="#e6f7ff"
         grad.addColorStop(0,"#9adfff");
         grad.addColorStop(1,color);
-        ctx.fillStyle = grad;
+        skyCtx.fillStyle = grad;
       }
 
-      ctx.fillRect(xCoord(0),yCoord(0),xCoord(360),-90*c.height/120);
-      ctx.closePath();
+      skyCtx.fillRect(xCoord(0),yCoord(0),xCoord(360),-90*c1.height/120);
+      skyCtx.closePath();
 
-      //draw 10-80 degree altitude lines, in 10 degree increments
-      for(var count=10; count<=80; count=count+10)
-      {
-        ctx.beginPath();
-        ctx.moveTo(0,yCoord(count));
-        ctx.lineTo(xCoord(360),yCoord(count));
-        ctx.strokeStyle = '#555555';
-        ctx.stroke();
-        ctx.closePath();
-      }
-
-      //draw 180 degree azimith line
-      ctx.beginPath();
-      ctx.moveTo(xCoord(180),yCoord(0));
-      ctx.lineTo(xCoord(180),yCoord(90));
-      ctx.strokeStyle = '#800000';
-      ctx.stroke();
-      ctx.closePath();
-
-      //draw 90 and 270 degree azimith line
-      for(var i=90; i<=270; i+=180)
-      {
-        ctx.beginPath();
-        ctx.moveTo(xCoord(i),yCoord(0));
-        ctx.lineTo(xCoord(i),yCoord(90));
-        ctx.strokeStyle = '#555555';
-        ctx.stroke();
-        ctx.closePath();
-      }
-
-      //draw -6 to 0 degree altitude twilight box
-      ctx.beginPath();
-      ctx.fillStyle ='#0099cc';
-      ctx.fillRect(xCoord(0),yCoord(-6),xCoord(360),-6*c.height/120);
-      ctx.closePath();
-
-      //draw -12 to -6 degree altitude twilight box
-      ctx.beginPath();
-      ctx.fillStyle ='#003366';
-      ctx.fillRect(xCoord(0),yCoord(-12),xCoord(360),-6*c.height/120);
-      ctx.closePath();
-
-      //draw -18 to -12 degree altitude twilight box
-      ctx.beginPath();
-      ctx.fillStyle ='#0e2f44';
-      ctx.fillRect(xCoord(0),yCoord(-18),xCoord(360),-6*c.height/120);
-      ctx.closePath();
-
-      //draw -30 to -18 degree altitude night box
-      ctx.beginPath();
-      ctx.fillStyle ='#222222';
-      ctx.fillRect(xCoord(0),yCoord(-30),xCoord(360),-12*c.height/120);
-      ctx.closePath();
-
-      //draw 0 altitude degree line
-      ctx.beginPath();
-      ctx.moveTo(0,yCoord(0));
-      ctx.lineTo(xCoord(360),yCoord(0));
-      ctx.strokeStyle = '#800000';
-      ctx.stroke();
-      ctx.closePath();
-
-      //draw -18 to -6 degree altitude lines, in 6 degree increments
-      for(var count=-18; count<=-6; count=count+6)
-      {
-        ctx.beginPath();
-        ctx.moveTo(0,yCoord(count));
-        ctx.lineTo(xCoord(360),yCoord(count));
-        ctx.strokeStyle = '#800000';
-        ctx.stroke();
-        ctx.closePath();
-      }
-
-      //draw direction labels
-      ctx.font = "14px Arial";
-      ctx.fillStyle="#ffffff"
-      ctx.fillText("South",c.width*.5,yCoord(90-5));
-      ctx.font = "14px Arial";
-      ctx.fillText("West",c.width*.75,yCoord(90-5));
-      ctx.font = "14px Arial";
-      ctx.fillText("East",c.width*.25,yCoord(90-5));
-
-      //draw degree labels
-      for(var count=10; count<=90; count=count+10)
-      {
-        ctx.font = "10px Arial";
-        ctx.fillStyle="#ffffff"
-        ctx.fillText(count+" deg",c.width*.95,yCoord(count-2));
-      }
+      //clear sunMoonStarCanvas
+      sunMoonStarCtx.clearRect(0,0, c1.width, c1.height);
 
       //plot 24 points for each hour
       plotSunPoints(latitude,longitude,currentMoment);
 
       //draw sun
-      ctx.beginPath();
-      ctx.arc(xCoord(sunAzimuth),yCoord(sunAltitude),10,0,2*Math.PI);
-      ctx.strokeStyle = '#990000';
-      ctx.stroke();
-      ctx.fillStyle = '#ffff00';
-      ctx.fill();
-      ctx.closePath();
+      sunMoonStarCtx.beginPath();
+      sunMoonStarCtx.arc(xCoord(sunAzimuth),yCoord(sunAltitude),10,0,2*Math.PI);
+      sunMoonStarCtx.strokeStyle = '#990000';
+      sunMoonStarCtx.stroke();
+      sunMoonStarCtx.fillStyle = '#ffff00';
+      sunMoonStarCtx.fill();
+      sunMoonStarCtx.closePath();
 
       if(sunAltitude<-6)
       {
-        generateStars(currentTimeAndDate, latitude, longitude, sunAltitude,sunAzimuth);
+        drawStars(currentTimeAndDate, latitude, longitude, sunAltitude,sunAzimuth);
       }
       drawMoon(currentTimeAndDate,latitude, longitude);
 
-      //draw border
-      ctx.beginPath();
-      ctx.strokeStyle = '#800000';
-      ctx.strokeRect(0, 0, c.width, c.height);
-      ctx.closePath();
 
       var sunTimes=SunCalc.getTimes(/*Date*/ currentTimeAndDate, /*Number*/ latitude, /*Number*/ longitude);
       var sunrise=moment(sunTimes.sunrise).utcOffset(timezone,false);
@@ -757,9 +782,17 @@
     <input type="radio" name="clockType" id="clockType24" value="24" onclick="updateClockType()" >24hr
     <p id="infoPanel">info panel</p>
 
-    <canvas id="myCanvas" width="1200" height="600"></canvas>
+    <div id="canvasesdiv" style="position:relative; width:1200px; height:600px">
+      <canvas id="skyCanvas" style="z-index: 1; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+      <canvas id="graphCanvas" style="z-index: 2; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+      <canvas id="sunMoonStarCanvas" style="z-index: 3; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+    </div>
+
+
     <script>
-      tempStartLocation()
+      initializeStarsArrays(120);
+      initializeCanvases();
+      tempStartLocation();
       now();
     </script>
     <br>
