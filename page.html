@@ -12,13 +12,23 @@
     //layer 1(bottom) is the sky color canvas
     //layer 2(middle) is the lines and degree label canvas
     //layer 3(top) is the canvas for the sun, moon and stars
-    var c1,skyCtx,graphCtx,sunMoonStarCtx;
+    var c1,skyCtx,graphCtx,sunPointsCtx,sunMoonStarCtx;
 
     //initialize arrays for star declination and hour displacement
     //using values for north star (dec: 89)
     //and arbitrary star above equator(dec: 0)
     var starDeclination=[89,0];
     var hourDisplacement=[6,2];
+
+    var previousDay=moment("0000", "YYYY");
+    var previousLatDeg;
+    var previousLatMin;
+    var previousLonDeg;
+    var previousLonMin;
+    var previousHemisphereNS;
+    var previousHemisphereEW;
+    var previousTimezone;
+
 
 
     //set the start location to new york city, NY
@@ -40,8 +50,11 @@
       skyCtx = c1.getContext("2d");
       var c2 = document.getElementById("graphCanvas");
       graphCtx = c2.getContext("2d");
-      var c3 = document.getElementById("sunMoonStarCanvas");
-      sunMoonStarCtx = c3.getContext("2d");
+      var c3 = document.getElementById("sunPointsCanvas");
+      sunPointsCtx = c3.getContext("2d");
+      var c4 = document.getElementById("sunMoonStarCanvas");
+      sunMoonStarCtx = c4.getContext("2d");
+
 
       //draw 10-80 degree altitude lines, in 10 degree increments
       for(var count=10; count<=80; count=count+10)
@@ -155,6 +168,27 @@
       return coord/360*c1.width;
     }
 
+    function gradientFunction(sunAltitude)
+    {
+      var color;
+      /*if(sunAltitude>30)
+      {
+        color="#ffff00";
+      }
+      else*/ if(sunAltitude>=0)
+      {
+        var red=Math.round((255-255)*Math.pow(sunAltitude/90,.25)+255);
+        var green=Math.round((255-102)*Math.pow(sunAltitude/90,.25)+102);
+        var blue=Math.round((153-0)*Math.pow(sunAltitude/90,.25)+0);
+        color="#"+red.toString(16)+green.toString(16)+"00";
+        //console.log(color);
+      }
+      else
+      {
+        color="#ff6600";
+      }
+      return color;
+    }
 
 
     /*
@@ -293,6 +327,10 @@
     }
 
 
+    function handleTimezoneChange()
+    {
+      /*TODO-*/
+    }
 
 
     /*
@@ -328,17 +366,20 @@
     This function calculates and plots red dots/circles for every hour (0-23)
     indicating where the sun is at the beginning of each hour HH:00
     */
-    function plotSunPoints(latitude, longitude, momentIn)
+    function plotSunPoints(latitude, longitude, timezone,momentIn)
     {
 
       //A moment counter that will be incremented every hour
-      var momentCounter=moment(momentIn.clone().format("MM/DD/YYYY"),"MM/DD/YYYY");
+      var momentCounter=moment(momentIn.clone().format("MM/DD/YYYY"),"MM/DD/YYYY").utcOffset(timezone);
+
 
       //JS Date object require for SunCalc library
       var timeAndDate;
 
       //Used to Altitude and Azimuth of the sun at the beginning of an hour
       var sunHourAltitude, sunHourAzimuth;
+
+      sunPointsCtx.clearRect(0,0, c1.width, c1.height);
 
       //Loop through every hour
       for(count=0;count<=23; count++)
@@ -358,11 +399,25 @@
         }
 
         //draw the red circle/dots
-        sunMoonStarCtx.beginPath();
-        sunMoonStarCtx.arc(xCoord(sunHourAzimuth),yCoord(sunHourAltitude),3,0,2*Math.PI);
-        sunMoonStarCtx.strokeStyle = '#990000';
-        sunMoonStarCtx.stroke();
-        sunMoonStarCtx.closePath();
+        sunPointsCtx.beginPath();
+        sunPointsCtx.arc(xCoord(sunHourAzimuth),yCoord(sunHourAltitude),3,0,2*Math.PI);
+        sunPointsCtx.strokeStyle = '#990000';
+        sunPointsCtx.stroke();
+        sunPointsCtx.closePath();
+
+        //determine the hour label to be printed next to each point
+        var hourString;
+        if(checkClockType()=="12")
+        {
+          hourString=momentCounter.clone().format("h a");
+        }
+        else {
+          hourString=momentCounter.clone().format("H:mm");
+        }
+
+        //draw sun point hour text label
+        sunPointsCtx.font = "10px Arial";
+        sunPointsCtx.fillText(hourString,xCoord(sunHourAzimuth+1),yCoord(sunHourAltitude+1));
 
         //increment the moment object by an hour
         momentCounter.add(1,'h');
@@ -490,15 +545,24 @@
 
       var momentCounter=moment(month+"/"+day+"/"+year+" 0","M/D/YYYY H").utcOffset(timezone,true);
 
+      var framesPerSecond=60;
+      var delay=1000/framesPerSecond;
+
+
       //the number of seconds in the day that 1 frame in the animation will skip over
       //ex:value of 120 means 1 frame in animation represents 2 minutes(120s) of the day
-      var playSecondInterval=120;
+      //var playSecondInterval=120;
+      var SecondsPlayedPerSecond=3600;
+      var playSecondInterval=SecondsPlayedPerSecond/framesPerSecond;
 
-      play(momentCounter,playSecondInterval);
+
+      play(momentCounter,playSecondInterval,delay);
       //document.getElementById("playbutton").value="Stop";
+
+
     }
 
-    function play(momentCounter, playSecondInterval)
+    function play(momentCounter, playSecondInterval,delay)
     {
       if(checkClockType()=="12")
       {
@@ -516,7 +580,7 @@
       momentCounter.add(playSecondInterval,"s");
       if(momentCounter.hour()!=23||momentCounter.minute()<(60-playSecondInterval/60))
       {
-        setTimeout(play,30, momentCounter,playSecondInterval);
+        setTimeout(play,delay, momentCounter,playSecondInterval,delay);
       }
     }
 
@@ -554,6 +618,7 @@
       }
 
       currentMoment.utcOffset(timezone, true);
+
 
 
       //Convert latitude to negative if south was selected
@@ -635,14 +700,28 @@
       sunMoonStarCtx.clearRect(0,0, c1.width, c1.height);
 
       //plot 24 points for each hour
-      plotSunPoints(latitude,longitude,currentMoment);
+      //console.log("test "+currentMoment.clone().format("YYYY DD")+" vs "+previousDay.clone().format("YYYY DD")+!currentMoment.isSame(previousDay, "date"));
+      if(!currentMoment.isSame(previousDay, "date")
+          ||latDeg!=previousLatDeg
+          ||latMin!=previousLatMin
+          ||lonDeg!=previousLonDeg
+          ||lonMin!=previousLonMin
+          ||vHemi!=previousHemisphereNS
+          ||hHemi!=previousHemisphereEW
+        )
+      {
+        //console.log("entered");
+        plotSunPoints(latitude,longitude,timezone,currentMoment);
+      }
+
+      var sunColor=gradientFunction(sunAltitude);
 
       //draw sun
       sunMoonStarCtx.beginPath();
       sunMoonStarCtx.arc(xCoord(sunAzimuth),yCoord(sunAltitude),10,0,2*Math.PI);
       sunMoonStarCtx.strokeStyle = '#990000';
       sunMoonStarCtx.stroke();
-      sunMoonStarCtx.fillStyle = '#ffff00';
+      sunMoonStarCtx.fillStyle = sunColor;
       sunMoonStarCtx.fill();
       sunMoonStarCtx.closePath();
 
@@ -673,6 +752,13 @@
 
       var sunTimesString="Sunrise: "+sunriseStr+" Sunset: "+sunsetStr+" Day Length: "+dayLength;
       document.getElementById("infoPanel").innerHTML=sunTimesString;
+
+
+      previousDay=currentMoment.clone();
+      previousLatDeg=latDeg;
+      previousLatMin=latMin;
+      previousLonDeg=lonDeg;
+      previousLonMin=lonMin;
     }
     </script>
   </head>
@@ -785,7 +871,8 @@
     <div id="canvasesdiv" style="position:relative; width:1200px; height:600px">
       <canvas id="skyCanvas" style="z-index: 1; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
       <canvas id="graphCanvas" style="z-index: 2; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
-      <canvas id="sunMoonStarCanvas" style="z-index: 3; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+      <canvas id="sunPointsCanvas" style="z-index: 3; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+      <canvas id="sunMoonStarCanvas" style="z-index: 4; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
     </div>
 
 
