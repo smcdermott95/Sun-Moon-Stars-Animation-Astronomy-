@@ -13,6 +13,8 @@
 
     var oldDate=moment("0000", "YYYY");
     var currentDate=moment("0000", "YYYY");
+    var oldTimezone=0;
+    var currentTimezone=0;
     var oldLocation;
     var currentLocation = new Location();
 
@@ -21,6 +23,7 @@
     {
       var newYork=new Location("new york",40,43,"n",74,0,"w");
       document.getElementById("timezone").value=-5;
+      setTimezone(getTimezone());
       updateLocation(newYork);
       setLocation(getLocation());
       drawCanvas();
@@ -221,19 +224,19 @@
       var hour=document.getElementById("hour").value;
       var min=document.getElementById("min").value;
       var ampm=document.getElementById("ampm").value;
-      var timezone=document.getElementById("timezone").value;
+      var timezone=currentTimezone;
 
       var date;
       if(checkClockType()=="12")
       {
-        date=moment(month+"/"+day+"/"+year+" "+hour+":"+min+" "+ampm+" "+timezone,"M/D/YYYY h:mm a");
+        date=moment(month+"/"+day+"/"+year+" "+hour+":"+min+" "+ampm,"M/D/YYYY h:mm a");
       }
       else
       {
         date=moment(month+"/"+day+"/"+year+" "+hour+":"+min,"M/D/YYYY H:m");
       }
 
-      date.utcOffset(timezone, true);
+      date.utcOffset(parseInt(timezone), true);
 
       return date;
     }
@@ -267,6 +270,27 @@
       }
 
     }
+
+
+
+    function calculateDate(oldDate)
+    {
+      var date=oldDate.utcOffset(currentTimezone);
+      return date;
+    }
+
+    function getTimezone()
+    {
+      return parseInt(document.getElementById("timezone").value);
+    }
+
+    function setTimezone(timezone)
+    {
+      oldTimezone=currentTimezone;
+      currentTimezone=timezone;
+    }
+
+
 
     function changeDate()
     {
@@ -407,6 +431,16 @@
     function handleTimezoneChange()
     {
       /*TODO-*/
+      //store old date
+      oldDate=getDate();
+
+      setTimezone(getTimezone());
+      //console.log("before "+currentDate.hour()+" "+oldTimezone);
+      updateDate(calculateDate(oldDate));
+      setTimezone(getTimezone())
+      setDate(getDate());
+      console.log("after "+currentDate.hour()+" "+currentTimezone);
+      drawCanvas();
     }
 
 
@@ -638,7 +672,7 @@
 
     function drawCanvas()
     {
-      var timezone=parseInt(document.getElementById("timezone").value);
+      var timezone=currentTimezone;
       var latitude=currentLocation.latitude;
       var longitude=currentLocation.longitude;
       var currentMoment=currentDate.clone();
@@ -710,11 +744,10 @@
 
       //plot 24 points for each hour
       //console.log("test "+currentMoment.clone().format("YYYY DD")+" vs "+previousDay.clone().format("YYYY DD")+!currentMoment.isSame(previousDay, "date"));
-      if(!currentMoment.isSame(oldDate, "date")
+      if(!currentMoment.isSame(oldDate, "date")||currentMoment.utcOffset()!=oldDate.utcOffset()
           //||!currentLocation.isSame(oldLocation)
         )
       {
-        console.log("entered");
         plotSunPoints(timezone);
       }
 
