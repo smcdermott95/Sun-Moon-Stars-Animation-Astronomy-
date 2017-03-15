@@ -10,112 +10,172 @@
     <script src="app.js" type="text/javascript">
     </script>
 
+    <style>
+      #inputInterface
+      {
+        padding:0;
+        margin-bottom:-190px;
+      }
+
+      .inputSelection {
+        border-radius: 10px;
+        background: #cccccc;
+        padding: 10px;
+      }
+
+      .inputTitle {
+        text-align: center;
+        padding:0px;
+        margin: 4px;
+        font-weight: bold;
+      }
+
+      #location {
+        width: 250px;
+      }
+
+      #dateTime {
+        width: 300px;
+        position: relative;
+        left: 300px;
+        top: -104px;
+      }
+
+      #playDiv
+      {
+        width: 300px;
+        position: relative;
+        left: 650px;
+        top: -212px;
+      }
+    </style>
+
     <title>unnamed App</title>
   </head>
   <body>
     <h1>Unnamed App</h1>
-    <p>Description</p>
+    <p>
+      Description: A tool that allows one to visualize the movement of the sun,
+      moon and stars accross the sky at a certain location.
+      <a href="https://github.com/smcdermott95/Sun-Moon-Stars-Animation-Astronomy-">Github page</a>
+    </p>
 
+    <div id=inputInterface>
     <!--location line-->
-    Location:
-    <select onchange="changeLocation()" id="latDeg">
-      <script>
-        for(var i=0; i<=89;i++)
-        {
-          document.write('<option value="'+i+'">'+i+'</option>');
-        }
-      </script>
-    </select>°
-    <select onchange="changeLocation()" id="latMin">
-      <script>
-        for(var i=0; i<=59;i++)
-        {
-          document.write('<option value="'+i+'">'+i+'</option>');
-        }
-      </script>
-    </select>'
-    <select onchange="changeLocation()" id="vHemi">
-      <option value="n">N</option>
-      <option value="s">S</option>
-    </select>
-    <select onchange="changeLocation()" id="lonDeg">
-      <script>
-        for(var i=0; i<=179;i++)
-        {
-          document.write('<option value="'+i+'">'+i+'</option>');
-        }
-      </script>
-    </select>°
-    <select onchange="changeLocation()" id="lonMin">
-      <script>
-        for(var i=0; i<=59;i++)
-        {
-          document.write('<option value="'+i+'">'+i+'</option>');
-        }
-      </script>
-    </select>'
-    <select onchange="changeLocation()" id="hHemi">
-      <option value="w">W</option>
-      <option value="e">E</option>
-    </select>
-    Timezone:
-    <select onchange="handleTimezoneChange()" id="timezone">
-      <script>
-        for(var i=-12; i<=12;i++)
-        {
-          document.write('<option value="'+i+'">'+i+'</option>');
-        }
-      </script>
-    </select>
-    <br>
-
-    <!--Date line-->
-    Date:
-    <select onchange="changeDate()" id="month">
-      <script>
-        for(var i=1; i<=12;i++)
-        {
-          document.write('<option value="'+i+'">'+i+'</option>');
-        }
-      </script>
-    </select>
-    <select onchange="changeDate()" id="day">
-    </select>
-    <select onchange="changeDate()" id="year">
-      <script>
-        for(var i=1990; i<=2025;i++)
-        {
-          document.write('<option value="'+i+'">'+i+'</option>');
-        }
-      </script>
-    </select>
-      Time
-    <select onchange="changeDate()" id="hour">
-      <script>
-          document.write('<option value="12">12</option>');
-          for(var i=1; i<=11;i++)
+    <div class="inputSelection" id="location">
+      <p class="inputTitle">Location</p>
+      Lattitude:
+      <select onchange="changeLocation()" id="latDeg">
+        <script>
+          for(var i=0; i<=89;i++)
           {
             document.write('<option value="'+i+'">'+i+'</option>');
           }
-      </script>
-    </select>
-    <select onchange="changeDate()" id="min">
-      <script>
-        for(var i=0; i<=59;i++)
-        {
-          document.write('<option value="'+i+'">'+i+'</option>');
-        }
-      </script>
-    </select>
-    <select id="ampm" onchange="changeDate()">
-      <option value="a">AM</option>
-      <option value="p">PM</option>
-    </select>
-    <!--<button type="button" onclick="drawCanvas()">Update</button>-->
-    <button type="button" onclick="now()">now</button>
-    <button type="button" id="playbutton" onclick="playInitialize()">Play</button>
-    <input type="radio" name="clockType" id="clockType12" value="12"  onclick="updateClockType()" checked>12hr
-    <input type="radio" name="clockType" id="clockType24" value="24" onclick="updateClockType()" >24hr
+        </script>
+      </select>°
+      <select onchange="changeLocation()" id="latMin">
+        <script>
+          for(var i=0; i<=59;i++)
+          {
+            document.write('<option value="'+i+'">'+i+'</option>');
+          }
+        </script>
+      </select>'
+      <select onchange="changeLocation()" id="vHemi">
+        <option value="n">N</option>
+        <option value="s">S</option>
+      </select><br>
+      Longitude:
+      <select onchange="changeLocation()" id="lonDeg">
+        <script>
+          for(var i=0; i<=179;i++)
+          {
+            document.write('<option value="'+i+'">'+i+'</option>');
+          }
+        </script>
+      </select>°
+      <select onchange="changeLocation()" id="lonMin">
+        <script>
+          for(var i=0; i<=59;i++)
+          {
+            document.write('<option value="'+i+'">'+i+'</option>');
+          }
+        </script>
+      </select>'
+      <select onchange="changeLocation()" id="hHemi">
+        <option value="w">W</option>
+        <option value="e">E</option>
+      </select><br>
+      Timezone:
+      <select onchange="handleTimezoneChange()" id="timezone">
+        <script>
+          for(var i=-12; i<=12;i++)
+          {
+            document.write('<option value="'+i+'">'+i+'</option>');
+          }
+        </script>
+      </select>
+      <br>
+    </div>
+
+
+    <!--Date line-->
+    <div class="inputSelection" id="dateTime">
+      <p class="inputTitle">Date and Time</p>
+      Date:
+      <select onchange="changeDate()" id="month">
+        <script>
+          for(var i=1; i<=12;i++)
+          {
+            document.write('<option value="'+i+'">'+i+'</option>');
+          }
+        </script>
+      </select>
+      <select onchange="changeDate()" id="day">
+      </select>
+      <select onchange="changeDate()" id="year">
+        <script>
+          for(var i=1990; i<=2025;i++)
+          {
+            document.write('<option value="'+i+'">'+i+'</option>');
+          }
+        </script>
+      </select><br>
+        Time
+      <select onchange="changeDate()" id="hour">
+        <script>
+            document.write('<option value="12">12</option>');
+            for(var i=1; i<=11;i++)
+            {
+              document.write('<option value="'+i+'">'+i+'</option>');
+            }
+        </script>
+      </select>
+      <select onchange="changeDate()" id="min">
+        <script>
+          for(var i=0; i<=59;i++)
+          {
+            document.write('<option value="'+i+'">'+i+'</option>');
+          }
+        </script>
+      </select>
+      <select id="ampm" onchange="changeDate()">
+        <option value="a">AM</option>
+        <option value="p">PM</option>
+      </select>
+      <input type="radio" name="clockType" id="clockType12" value="12"  onclick="updateClockType()" checked>12hr
+      <input type="radio" name="clockType" id="clockType24" value="24" onclick="updateClockType()" >24hr<br>
+      <button type="button" id="currentButton" onclick="now()">Use Current Time</button>
+    </div>
+
+    <div class="inputSelection" id="playDiv">
+      <p class="inputTitle">Animation</p>
+      <button type="button" id="playbutton" onclick="playInitialize()">Play</button><br>
+      <input type="checkbox" id="playStart" value="beginning" checked>
+      Play from begining of day?
+    </div>
+    </div>
+
     <p id="infoPanel">info panel</p>
 
     <div id="canvasesdiv" style="position:relative; width:1200px; height:600px">
