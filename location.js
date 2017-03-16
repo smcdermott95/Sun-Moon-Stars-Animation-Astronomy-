@@ -1,5 +1,5 @@
 class Location {
-  constructor(name,latDeg,latMin,hemisphereNS,lonDeg,lonMin,hemisphereEW){
+  constructor(name,latDeg,latMin,hemisphereNS,lonDeg,lonMin,hemisphereEW,timezone,observeDST){
     this.name=name;
     this.latitudeDegrees=latDeg;
     this.latitudeMinutes=latMin;
@@ -9,6 +9,8 @@ class Location {
     this.longitudeMinutes=lonMin
     this.longitude=lonDeg+lonMin/60.0
     this.hemisphereEW=hemisphereEW;
+    this.timezone=timezone;
+    this.observeDST=observeDST;
 
     //Convert latitude to negative if south was selected
     if(hemisphereNS=="s")
@@ -24,7 +26,7 @@ class Location {
   }
 
   clone(){
-    var copy = new Location(this.name,this.latitudeDegrees,this.latitudeMinutes,this.hemisphereNS,this.longitudeDegrees,this.longitudeMinutes,this.hemisphereEW);
+    var copy = new Location(this.name,this.latitudeDegrees,this.latitudeMinutes,this.hemisphereNS,this.longitudeDegrees,this.longitudeMinutes,this.hemisphereEW,this.timezone,this.observeDST);
     return copy;
   }
 
@@ -36,6 +38,8 @@ class Location {
       this.hemisphereNS==otherLocation.hemisphereNS&&
       this.longitudeDegrees==otherLocation.longitudeDegrees&&
       this.longitudeMinutes==otherLocation.longitudeMinutes&&
-      this.hemisphereEW==otherLocation.hemisphereEW;
+      this.hemisphereEW==otherLocation.hemisphereEW&&
+      this.timezone==otherLocation.timezone&&
+      this.observeDST==otherLocation.observeDST;
   }
 }
