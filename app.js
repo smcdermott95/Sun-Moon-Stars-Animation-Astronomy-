@@ -14,7 +14,8 @@
 
     var oldDate=moment("0000", "YYYY");
     var currentDate=moment("0000", "YYYY");
-    var currentTimezone=0;
+    //var currentTimezone=0;      //true timezone(-12,12) without DST adjustment
+	var tzAdjustment=0;         //used account for DST  
     var oldLocation;
     var currentLocation = new Location();
     var textColor="white";
@@ -23,6 +24,7 @@
     var currentDeclination;
     var fps="60";
     var playSpeed=3600;
+	var crosshairPos= {x:0, y:0};
 
     //set the start location to new york city, NY
     function tempStartLocation()
@@ -31,8 +33,7 @@
       setLocationName("New York City");
       updateLocation(newYork);
       setLocation(newYork);
-      calculateTimezone();
-      //drawCanvas();
+	  now();
     }
 
 
@@ -48,6 +49,10 @@
       sunPointsCtx = c3.getContext("2d");
       var c4 = document.getElementById("sunMoonStarCanvas");
       sunMoonStarCtx = c4.getContext("2d");
+	  
+	  
+	  //event listener
+	  c4.addEventListener("mousedown",handleMouseDown);
 
 
       //draw 10-80 degree altitude lines, in 10 degree increments
@@ -123,6 +128,7 @@
         graphCtx.closePath();
       }
 
+	  /*
       //draw degree labels
       for(var count=10; count<=90; count=count+10)
       {
@@ -130,6 +136,7 @@
         graphCtx.fillStyle="#ffffff";
         graphCtx.fillText(count+" deg",c1.width*.95,yCoord(count-2));
       }
+	  */
 
       //draw border
       graphCtx.beginPath();
@@ -137,6 +144,21 @@
       graphCtx.strokeRect(0, 0, c1.width, c1.height);
       graphCtx.closePath();
     }
+	
+	function convertCoords(canvas, x,y)
+	{
+	  var bbox = canvas.getBoundingClientRect();
+	  return { x: x - bbox.left * (canvas.width  / bbox.width),
+        y: y - bbox.top  * (canvas.height / bbox.height)
+      };
+	}
+	
+	function handleMouseDown(event)
+	{
+		crosshairPos=convertCoords(c1,event.clientX,event.clientY);
+		console.log(crosshairPos.x+","+crosshairPos.y);
+		drawCanvas();
+	}
 
 
 
@@ -185,10 +207,13 @@
       var lonMin=parseInt(document.getElementById("lonMin").value);
       var vHemi=document.getElementById("vHemi").value;
       var hHemi=document.getElementById("hHemi").value;
-      var timezone=document.getElementById("timezone").value;
+      var timezone=parseInt(document.getElementById("timezone").value);
+	  
+	  //TODO get from on-screen UI
+	  var observeDST=currentLocation.observeDST;
 
       //oldLocation=currentLocation.clone();
-      var location=new Location(name,latDeg, latMin,vHemi,lonDeg,lonMin,hHemi,timezone,0);
+      var location=new Location(name,latDeg, latMin,vHemi,lonDeg,lonMin,hHemi,timezone,observeDST);
       return location;
     }
 
@@ -213,6 +238,7 @@
       document.getElementById("lonDeg").value=location.longitudeDegrees;
       document.getElementById("lonMin").value=location.longitudeMinutes;
       document.getElementById("hHemi").value=location.hemisphereEW;
+	  document.getElementById("timezone").value=location.timezone;
     }
 
 
@@ -231,18 +257,37 @@
     */
     function changeLocationName()
     {
-      var name=document.getElementById("locationName").value;
-      for(var i=0; i<locationDB.locationVec.length;i++)
-      {
-        if(locationDB.locationVec[i].name==name)
-        {
-          updateLocation(locationDB.locationVec[i]);
-          setLocation(locationDB.locationVec[i]);
-          calculateTimezone();
-          i=locationDB.locationVec.length;
-        }
-      }
-      drawCanvas();
+	  //check if location selection is at index 0
+	  //if not a 0, then a city other than "custom" was picked
+	  if(document.getElementById("locationName").selectedIndex!=0)
+	  {
+		  //store city name
+		  var name=document.getElementById("locationName").value;
+		  
+		  //search for name in database
+		  for(var i=0; i<locationDB.locationVec.length;i++)
+		  {
+			//if city was found...
+			if(locationDB.locationVec[i].name==name)
+			{
+			  //store old date
+			  oldDate=getDate();  
+			  
+			  //update location on UI and set location object
+			  updateLocation(locationDB.locationVec[i]);  
+			  setLocation(locationDB.locationVec[i]);
+			  
+			  //convert date/time at old location to date/time at new location
+			  //update date on UI and set date object
+              updateDate(calculateDate(oldDate));
+              setDate(getDate());
+			  
+			  i=locationDB.locationVec.length; //break loop
+			}
+		  }
+	  
+        drawCanvas();
+	  }
     }
 
     /*
@@ -277,7 +322,7 @@
         date=moment(month+"/"+day+"/"+year+" "+hour+":"+min,"M/D/YYYY H:m");
       }
 
-      date.utcOffset(parseInt(currentTimezone), true);
+      date.utcOffset(parseInt(currentLocation.timezone+tzAdjustment), true);
 
       return date;
     }
@@ -325,7 +370,8 @@
     */
     function calculateDate(oldDate)
     {
-      var date=oldDate.clone().utcOffset(currentTimezone);
+	  calculateTzAdjustment();
+      var date=oldDate.clone().utcOffset(currentLocation.timezone+tzAdjustment);
       return date;
     }
 
@@ -334,44 +380,34 @@
     */
     function getTimezone()
     {
-      return parseInt(document.getElementById("timezone").value);
-    }
-
-    /*
-    update the timezone on input screen
-    */
-    function updateTimezone(timezone)
-    {
-      document.getElementById("timezone").value=timezone;
+	  return parseInt(document.getElementById("timezone").value);
+      //return parseInt(document.getElementById("timezone").value)+parseInt(document.getElementById("tzAdjustment").innerHTML);
     }
 
     /*
     Calculate and set the timezone using the current location
     */
-    function calculateTimezone()
+    function calculateTzAdjustment()
     {
       //if location observes DST, add 1
       if(moment(currentDate.clone().format("MM/DD/YYYY"),"MM/DD/YYYY").isDST()
          &&currentLocation.observeDST)
       {
-        updateTimezone(currentLocation.timezone+1);
-        setTimezone(currentLocation.timezone+1);
+		tzAdjustment=1;
+		
+		//updateTzAdjustment
+		document.getElementById("tzAdjustment").innerHTML="1";
+		
       }
       else
       {
-        updateTimezone(currentLocation.timezone);
-        setTimezone(currentLocation.timezone);
+		tzAdjustment=0;
+		
+		//updateTzAdjustment
+		document.getElementById("tzAdjustment").innerHTML="0";
       }
+	  
     }
-
-    /*
-    Set the currentTimezone to a timezone
-    */
-    function setTimezone(timezone)
-    {
-      currentTimezone=timezone;
-    }
-
 
     /*
     Called when user changes the date on the input screen
@@ -379,7 +415,7 @@
     function changeDate()
     {
       setDate(getDate());
-      calculateTimezone();
+      calculateTzAdjustment();
       drawCanvas();
     }
 
@@ -521,7 +557,7 @@
     function handleTimezoneChange()
     {
       oldDate=getDate();
-      setTimezone(getTimezone());
+      currentLocation.timezone=parseInt(document.getElementById("timezone").value); //TODO need set method or no?
       updateDate(calculateDate(oldDate));
       setDate(getDate());
       drawCanvas();
@@ -545,12 +581,12 @@
 
 
     /*
-    This function will draw the moon with a given JS Date object,
+    This function will draw the moon with a given moment,
     a latitude and longitude.
     */
     function drawMoon(moment,latitude, longitude)
     {
-      //conver moment to JS date object
+      //convert moment to JS date object
       var timeAndDate=moment.clone().toDate();
 
       //calculate moon alitude and azimuth
@@ -583,7 +619,7 @@
     function plotSunPoints()
     {
       //A moment counter that will be incremented every hour
-      var momentCounter=moment(currentDate.clone().format("MM/DD/YYYY"),"MM/DD/YYYY").utcOffset(currentTimezone);
+      var momentCounter=moment(currentDate.clone().format("MM/DD/YYYY"),"MM/DD/YYYY").utcOffset(currentLocation.timezone+tzAdjustment);
       var latitude=currentLocation.latitude;
       var longitude=currentLocation.longitude;
 
@@ -641,20 +677,31 @@
         momentCounter.add(1,'h');
       }
 
+	  
+	  //draw directionLabels
       var directionsLabels;
       if(latitude>currentDeclination)
       {
-        directionsLabels=["East","South","West"];
+        directionsLabels=["North","East","South","West"];
       }
       else {
-        directionsLabels=["West","North","East"];
+        directionsLabels=["South","West","North","East"];
       }
-
       sunPointsCtx.fillStyle=textColor;
       sunPointsCtx.font = "14px Arial";
-      sunPointsCtx.fillText(directionsLabels[0],c1.width*.25+3,yCoord(90-5));
-      sunPointsCtx.fillText(directionsLabels[1],c1.width*.5+3,yCoord(90-5));
-      sunPointsCtx.fillText(directionsLabels[2],c1.width*.75+3,yCoord(90-5));
+	  sunPointsCtx.fillText(directionsLabels[0],3,yCoord(90-5));
+      sunPointsCtx.fillText(directionsLabels[1],c1.width*.25+3,yCoord(90-5));
+      sunPointsCtx.fillText(directionsLabels[2],c1.width*.5+3,yCoord(90-5));
+      sunPointsCtx.fillText(directionsLabels[3],c1.width*.75+3,yCoord(90-5));
+	  
+	  
+	  
+	  //draw degree labels
+      for(var count=10; count<=90; count=count+10)
+      {
+        sunPointsCtx.font = "10px Arial";
+        sunPointsCtx.fillText(count+" deg",c1.width*.95,yCoord(count-2));
+      }
     }
 
 
@@ -748,11 +795,12 @@
     function now()
     {
       //initialize a default moment(uses current time) and offset
-      var momentNow=moment().utcOffset(parseInt(currentTimezone),false);
+      var momentNow=moment().utcOffset(parseInt(currentLocation.timezone+tzAdjustment),false);
+
 
       updateDate(momentNow);
       setDate(momentNow);
-      calculateTimezone();
+	  calculateTzAdjustment();
       drawCanvas();
     }
 
@@ -780,7 +828,7 @@
         //user checks the corresponding option, otherwise set to current time
         if(document.getElementById("playStart").checked)
         {
-          momentCounter=moment(currentDate.clone().format("M/D/YYYY")+" 0","M/D/YYYY H").utcOffset(currentTimezone,true);
+          momentCounter=moment(currentDate.clone().format("M/D/YYYY")+" 0","M/D/YYYY H").utcOffset(currentLocation.timezone+tzAdjustment,true);
         }
         else
         {
@@ -932,8 +980,8 @@
 
         //calculate sunrise, sunset, and day length
         var sunTimes=SunCalc.getTimes(/*Date*/ currentTimeAndDate, /*Number*/ latitude, /*Number*/ longitude);
-        var sunrise=moment(sunTimes.sunrise).utcOffset(currentTimezone,false);
-        var sunset=moment(sunTimes.sunset).utcOffset(currentTimezone,false);
+        var sunrise=moment(sunTimes.sunrise).utcOffset(currentLocation.timezone+tzAdjustment,false);
+        var sunset=moment(sunTimes.sunset).utcOffset(currentLocation.timezone+tzAdjustment,false);
         var dayLength=sunset.diff(sunrise, 'minutes');
         var sunriseStr;
         var sunsetStr;
@@ -981,4 +1029,17 @@
       }
 
       drawMoon(currentDate,latitude, longitude);
+	  
+	  //draw crosshair
+	  sunMoonStarCtx.strokeStyle = '#39FF14';
+	  sunMoonStarCtx.beginPath();
+      sunMoonStarCtx.moveTo(crosshairPos.x-5,crosshairPos.y);
+      sunMoonStarCtx.lineTo(crosshairPos.x+5,crosshairPos.y);
+      sunMoonStarCtx.stroke();
+      sunMoonStarCtx.closePath();
+	  sunMoonStarCtx.beginPath();
+      sunMoonStarCtx.moveTo(crosshairPos.x,crosshairPos.y-5);
+      sunMoonStarCtx.lineTo(crosshairPos.x,crosshairPos.y+5);
+      sunMoonStarCtx.stroke();
+      sunMoonStarCtx.closePath();
     }
