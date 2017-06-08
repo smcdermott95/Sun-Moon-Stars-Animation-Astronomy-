@@ -1,184 +1,197 @@
+var SMSA = {
 
-    //declare 3 canvas contexts
-    //layer 1(bottom) is the sky color canvas
-    //layer 2(middle) is the lines and degree label canvas
-    //layer 3(top) is the canvas for the sun, moon and stars
-    var c1,skyCtx,graphCtx,sunPointsCtx,sunMoonStarCtx;
-    var interval;
+	c1:             document.getElementById("skyCanvas"), //get canvas
+	skyCtx:         null, //layer 1(backmost) for background sky color
+	graphCtx:       null, //layer 2 for grid lines
+	sunPointsCtx:   null, //layer 3 for sun hour points and text
+	sunMoonStarCtx: null, //layer 4(topmost) for the sun, moon, and stars
+	
+	//grab drop down menus, buttons, inputs
+	monthDropdown:     document.getElementById("month"),
+	dayDropdown:       document.getElementById("day"),
+	yearDropdown:      document.getElementById("year"),
+	hourDropdown:      document.getElementById("hour"),
+	minDropdown:       document.getElementById("min"),
+	ampmDropdown:      document.getElementById("ampm"),
+	locationDropdown:  document.getElementById("locationName"),
+	latDegDropdown:    document.getElementById("latDeg"),
+	latMinDropdown:    document.getElementById("latMin"),
+	lonDegDropdown:    document.getElementById("lonDeg"),
+	lonMinDropdown:    document.getElementById("lonMin"),
+	vHemiDropdown:     document.getElementById("vHemi"),
+	hHemiDropdown:     document.getElementById("hHemi"),
+	tzDropdown:        document.getElementById("timezone"),
+    currentButton:     document.getElementById("currentButton"),
+    playStartCheckbox: document.getElementById("playStart"),
+    frameRateInput:    document.getElementById("frameRate"),
+    playButton:        document.getElementById("playbutton"),
+	
+    starDeclination:   [89,0], //initilize array to store RNG'ed star declination position
+    hourDisplacement:  [6,2],  //initilize array to store RNG'ed star hour positions
+	
+	crosshairPos:      {x:0, y:0},  //position of crosshair
 
-    //initialize arrays for star declination and hour displacement
-    //using values for north star (dec: 89)
-    //and arbitrary star above equator(dec: 0)
-    var starDeclination=[89,0];
-    var hourDisplacement=[6,2];
+    oldDate:           moment("0000", "YYYY"),  //the previous date before a date is changed
+    currentDate:       moment("0000", "YYYY"),  //the date after a date is changed
+	tzAdjustment:      0,         //offset used account for DST  
+	
+    oldLocation:       null,            //the previous location before it is changed
+    currentLocation:   new Location(),  //the location after it is changed
+	isLocationUpdated: "undefined",
+	
+    textColor:         "white",         //text color for grid and direction labels,
+	crosshairColor:    null,
+    currentSkyColorType:"undefined",    //either 'night','astronomical','nautical','civil', or 'day'
+    currentDeclination: "undefined",    //declination of the sun
+	
+    fps:               "30",   //frames per second
+    playSpeed:         3600,   //seconds of day passed(in animation) for each real life second
+	interval:          "undefined",
 
-    var oldDate=moment("0000", "YYYY");
-    var currentDate=moment("0000", "YYYY");
-    //var currentTimezone=0;      //true timezone(-12,12) without DST adjustment
-	var tzAdjustment=0;         //used account for DST  
-    var oldLocation;
-    var currentLocation = new Location();
-    var textColor="white";
-    var currentskyColorType = "";
-    var islocationUpdated;
-    var currentDeclination;
-    var fps="60";
-    var playSpeed=3600;
-	var crosshairPos= {x:0, y:0};
-
+	
+	
+	
     //set the start location to new york city, NY
-    function tempStartLocation()
+    tempStartLocation: function()
     {
-      var newYork=new Location("new york",40,43,"n",74,0,"w", -5, true);
-      setLocationName("New York City");
-      updateLocation(newYork);
-      setLocation(newYork);
-	  now();
-    }
-
-
+      var newYork=new Location("New York City",40,43,"n",74,0,"w", -5, true);
+      this.updateLocation(newYork);
+      this.setLocation(newYork);
+	  this.now();
+	  this.now();   //TODO figure out why this needs to be called twice 
+    },
+	
     //set the canvas contexts and draw the lines and degree labels on the
     //graph canvas
-    function initializeCanvases()
+    initializeCanvases: function()
     {
-      c1 = document.getElementById("skyCanvas");
-      skyCtx = c1.getContext("2d");
+	  this.skyCtx=this.c1.getContext("2d");
       var c2 = document.getElementById("graphCanvas");
-      graphCtx = c2.getContext("2d");
+      this.graphCtx = c2.getContext("2d");
       var c3 = document.getElementById("sunPointsCanvas");
-      sunPointsCtx = c3.getContext("2d");
+      this.sunPointsCtx = c3.getContext("2d");
       var c4 = document.getElementById("sunMoonStarCanvas");
-      sunMoonStarCtx = c4.getContext("2d");
+      this.sunMoonStarCtx = c4.getContext("2d");
 	  
 	  
 	  //event listener
-	  c4.addEventListener("mousedown",handleMouseDown);
+	  c4.addEventListener("mousedown",this.handleMouseDown);
 
 
       //draw 10-80 degree altitude lines, in 10 degree increments
       for(var count=10; count<=80; count=count+10)
       {
-        graphCtx.beginPath();
-        graphCtx.moveTo(0,yCoord(count));
-        graphCtx.lineTo(xCoord(360),yCoord(count));
-        graphCtx.strokeStyle = '#555555';
-        graphCtx.stroke();
-        graphCtx.closePath();
+        this.graphCtx.beginPath();
+        this.graphCtx.moveTo(0,this.yCoord(count));
+        this.graphCtx.lineTo(this.xCoord(360),this.yCoord(count));
+        this.graphCtx.strokeStyle = '#555555';
+        this.graphCtx.stroke();
+        this.graphCtx.closePath();
       }
 
       //draw 180 degree azimith line
-      graphCtx.beginPath();
-      graphCtx.moveTo(xCoord(180),yCoord(0));
-      graphCtx.lineTo(xCoord(180),yCoord(90));
-      graphCtx.strokeStyle = '#800000';
-      graphCtx.stroke();
-      graphCtx.closePath();
+      this.graphCtx.beginPath();
+      this.graphCtx.moveTo(this.xCoord(180),this.yCoord(0));
+      this.graphCtx.lineTo(this.xCoord(180),this.yCoord(90));
+      this.graphCtx.strokeStyle = '#800000';
+      this.graphCtx.stroke();
+      this.graphCtx.closePath();
 
       //draw 90 and 270 degree azimith line
       for(var i=90; i<=270; i+=180)
       {
-        graphCtx.beginPath();
-        graphCtx.moveTo(xCoord(i),yCoord(0));
-        graphCtx.lineTo(xCoord(i),yCoord(90));
-        graphCtx.strokeStyle = '#555555';
-        graphCtx.stroke();
-        graphCtx.closePath();
+        this.graphCtx.beginPath();
+        this.graphCtx.moveTo(this.xCoord(i),this.yCoord(0));
+        this.graphCtx.lineTo(this.xCoord(i),this.yCoord(90));
+        this.graphCtx.strokeStyle = '#555555';
+        this.graphCtx.stroke();
+        this.graphCtx.closePath();
       }
 
       //draw -6 to 0 degree altitude twilight box
-      graphCtx.beginPath();
-      graphCtx.fillStyle ='#0099cc';
-      graphCtx.fillRect(xCoord(0),yCoord(-6),xCoord(360),-6*c1.height/120);
-      graphCtx.closePath();
+      this.graphCtx.beginPath();
+      this.graphCtx.fillStyle ='#0099cc';
+      this.graphCtx.fillRect(this.xCoord(0),this.yCoord(-6),this.xCoord(360),-6*this.c1.height/120);
+      this.graphCtx.closePath();
 
       //draw -12 to -6 degree altitude twilight box
-      graphCtx.beginPath();
-      graphCtx.fillStyle ='#003366';
-      graphCtx.fillRect(xCoord(0),yCoord(-12),xCoord(360),-6*c1.height/120);
-      graphCtx.closePath();
+      this.graphCtx.beginPath();
+      this.graphCtx.fillStyle ='#003366';
+      this.graphCtx.fillRect(this.xCoord(0),this.yCoord(-12),this.xCoord(360),-6*this.c1.height/120);
+      this.graphCtx.closePath();
 
       //draw -18 to -12 degree altitude twilight box
-      graphCtx.beginPath();
-      graphCtx.fillStyle ='#0e2f44';
-      graphCtx.fillRect(xCoord(0),yCoord(-18),xCoord(360),-6*c1.height/120);
-      graphCtx.closePath();
+      this.graphCtx.beginPath();
+      this.graphCtx.fillStyle ='#0e2f44';
+      this.graphCtx.fillRect(this.xCoord(0),this.yCoord(-18),this.xCoord(360),-6*this.c1.height/120);
+      this.graphCtx.closePath();
 
       //draw -30 to -18 degree altitude night box
-      graphCtx.beginPath();
-      graphCtx.fillStyle ='#222222';
-      graphCtx.fillRect(xCoord(0),yCoord(-30),xCoord(360),-12*c1.height/120);
-      graphCtx.closePath();
+      this.graphCtx.beginPath();
+      this.graphCtx.fillStyle ='#222222';
+      this.graphCtx.fillRect(this.xCoord(0),this.yCoord(-30),this.xCoord(360),-12*this.c1.height/120);
+      this.graphCtx.closePath();
 
       //draw 0 altitude degree line
-      graphCtx.beginPath();
-      graphCtx.moveTo(0,yCoord(0));
-      graphCtx.lineTo(xCoord(360),yCoord(0));
-      graphCtx.strokeStyle = '#800000';
-      graphCtx.stroke();
-      graphCtx.closePath();
+      this.graphCtx.beginPath();
+      this.graphCtx.moveTo(0,this.yCoord(0));
+      this.graphCtx.lineTo(this.xCoord(360),this.yCoord(0));
+      this.graphCtx.strokeStyle = '#800000';
+      this.graphCtx.stroke();
+      this.graphCtx.closePath();
 
       //draw -18 to -6 degree altitude lines, in 6 degree increments
       for(var count=-18; count<=-6; count=count+6)
       {
-        graphCtx.beginPath();
-        graphCtx.moveTo(0,yCoord(count));
-        graphCtx.lineTo(xCoord(360),yCoord(count));
-        graphCtx.strokeStyle = '#800000';
-        graphCtx.stroke();
-        graphCtx.closePath();
+        this.graphCtx.beginPath();
+        this.graphCtx.moveTo(0,this.yCoord(count));
+        this.graphCtx.lineTo(this.xCoord(360),this.yCoord(count));
+        this.graphCtx.strokeStyle = '#800000';
+        this.graphCtx.stroke();
+        this.graphCtx.closePath();
       }
-
-	  /*
-      //draw degree labels
-      for(var count=10; count<=90; count=count+10)
-      {
-        graphCtx.font = "10px Arial";
-        graphCtx.fillStyle="#ffffff";
-        graphCtx.fillText(count+" deg",c1.width*.95,yCoord(count-2));
-      }
-	  */
 
       //draw border
-      graphCtx.beginPath();
-      graphCtx.strokeStyle = '#800000';
-      graphCtx.strokeRect(0, 0, c1.width, c1.height);
-      graphCtx.closePath();
-    }
+      this.graphCtx.beginPath();
+      this.graphCtx.strokeStyle = '#800000';
+      this.graphCtx.strokeRect(0, 0, this.c1.width, this.c1.height);
+      this.graphCtx.closePath();
+    },
 	
-	function convertCoords(canvas, x,y)
+	convertCoords: function(canvas, x,y)
 	{
 	  var bbox = canvas.getBoundingClientRect();
 	  return { x: x - bbox.left * (canvas.width  / bbox.width),
         y: y - bbox.top  * (canvas.height / bbox.height)
       };
-	}
+	},
 	
-	function handleMouseDown(event)
+	handleMouseDown: function(event)
 	{
-		crosshairPos=convertCoords(c1,event.clientX,event.clientY);
-		console.log(crosshairPos.x+","+crosshairPos.y);
-		drawCanvas();
-	}
+		SMSA.crosshairPos=SMSA.convertCoords(SMSA.c1,event.clientX,event.clientY);
+		console.log(SMSA.crosshairPos.x+","+SMSA.crosshairPos.y);
+		SMSA.drawCanvas();
+	},
 
 
 
     //convert altitude angle(-30 to +90) to pixel y-coordinate on the canvas
-    function yCoord(coord)
+    yCoord: function(coord)
     {
-      return -c1.height*.75/90*coord+.75*c1.height;
-    }
+      return -this.c1.height*.75/90*coord+.75*this.c1.height;
+    },
 
     //convert the azimuth angle (0 to 360 degrees east of north) to
     //an x-coordinate on the canvas
-    function xCoord(coord)
+    xCoord: function(coord)
     {
-      return coord/360*c1.width;
-    }
+      return coord/360*this.c1.width;
+    },
 
     /*
     Calculate a sun color in hex given an altitude and return it.
     */
-    function gradientFunction(sunAltitude)
+    gradientFunction: function(sunAltitude)
     {
       var color;
       if(sunAltitude>=0)
@@ -193,76 +206,68 @@
         color="#ff6600";
       }
       return color;
-    }
+    },
 
     /*
     Get the selected location on the screen and return a location object
     */
-    function getLocation()
+    getLocation: function()
     {
       var name="custom";
-      var latDeg=parseInt(document.getElementById("latDeg").value);
-      var latMin=parseInt(document.getElementById("latMin").value);
-      var lonDeg=parseInt(document.getElementById("lonDeg").value);
-      var lonMin=parseInt(document.getElementById("lonMin").value);
-      var vHemi=document.getElementById("vHemi").value;
-      var hHemi=document.getElementById("hHemi").value;
-      var timezone=parseInt(document.getElementById("timezone").value);
+      var latDeg=parseInt(this.latDegDropdown.value);
+      var latMin=parseInt(this.latMinDropdown.value);
+      var lonDeg=parseInt(this.lonDegDropdown.value);
+      var lonMin=parseInt(this.lonMinDropdown.value);
+      var vHemi=this.vHemiDropdown.value;
+      var hHemi=this.hHemiDropdown.value;
+      var timezone=parseInt(this.tzDropdown.value);
 	  
 	  //TODO get from on-screen UI
-	  var observeDST=currentLocation.observeDST;
+	  var observeDST=this.currentLocation.observeDST;
 
-      //oldLocation=currentLocation.clone();
+      //this.oldLocation=this.currentLocation.clone();
       var location=new Location(name,latDeg, latMin,vHemi,lonDeg,lonMin,hHemi,timezone,observeDST);
       return location;
-    }
+    },
 
     /*
     Set the current location to a location
     */
-    function setLocation(location)
+    setLocation: function(location)
     {
-      oldLocation=currentLocation;
-      currentLocation=location;
-      islocationUpdated=false;
-    }
+      this.oldLocation=this.currentLocation;
+      this.currentLocation=location;
+      this.isLocationUpdated=false;
+    },
 
     /*
     Set the location on the input screen to a location object
     */
-    function updateLocation(location)
+    updateLocation: function(location)
     {
-      document.getElementById("latDeg").value=location.latitudeDegrees;
-      document.getElementById("latMin").value=location.latitudeMinutes;
-      document.getElementById("vHemi").value=location.hemisphereNS;
-      document.getElementById("lonDeg").value=location.longitudeDegrees;
-      document.getElementById("lonMin").value=location.longitudeMinutes;
-      document.getElementById("hHemi").value=location.hemisphereEW;
-	  document.getElementById("timezone").value=location.timezone;
-    }
-
-
-    /*
-    Update the location name drop down selection
-    */
-    function setLocationName(name)
-    {
-      document.getElementById("locationName").value=name;
-    }
+	  this.locationDropdown.value=location.name;
+      this.latDegDropdown.value=location.latitudeDegrees;
+      this.latMinDropdown.value=location.latitudeMinutes;
+      this.vHemiDropdown.value=location.hemisphereNS;
+      this.lonDegDropdown.value=location.longitudeDegrees;
+      this.lonMinDropdown.value=location.longitudeMinutes;
+      this.hHemiDropdown.value=location.hemisphereEW;
+	  this.tzDropdown.value=location.timezone;
+    },
 
     /*
     Called when user chooses a city from the drop-down
     Find the selected city in the locationDB vector and update the input pane
     with that city's data
     */
-    function changeLocationName()
+    changeLocationName: function()
     {
 	  //check if location selection is at index 0
 	  //if not a 0, then a city other than "custom" was picked
-	  if(document.getElementById("locationName").selectedIndex!=0)
+	  if(this.locationDropdown.selectedIndex!=0)
 	  {
 		  //store city name
-		  var name=document.getElementById("locationName").value;
+		  var name=this.locationDropdown.value;
 		  
 		  //search for name in database
 		  for(var i=0; i<locationDB.locationVec.length;i++)
@@ -271,49 +276,49 @@
 			if(locationDB.locationVec[i].name==name)
 			{
 			  //store old date
-			  oldDate=getDate();  
+			  this.oldDate=this.getDate();  
 			  
 			  //update location on UI and set location object
-			  updateLocation(locationDB.locationVec[i]);  
-			  setLocation(locationDB.locationVec[i]);
+			  this.updateLocation(locationDB.locationVec[i]);  
+			  this.setLocation(locationDB.locationVec[i]);
 			  
 			  //convert date/time at old location to date/time at new location
 			  //update date on UI and set date object
-              updateDate(calculateDate(oldDate));
-              setDate(getDate());
+              this.updateDate(this.calculateDate(this.oldDate));
+              this.setDate(this.getDate());
 			  
 			  i=locationDB.locationVec.length; //break loop
 			}
 		  }
 	  
-        drawCanvas();
+        this.drawCanvas();
 	  }
-    }
+    },
 
     /*
     Called when user changes the location attributes on the input screen
     */
-    function changeLocation()
+    changeLocation: function()
     {
-      setLocationName("custom");
-      setLocation(getLocation());
-      drawCanvas();
-    }
+      this.locationDropdown.value="custom";
+      this.setLocation(this.getLocation());
+      this.drawCanvas();
+    },
 
     /*
     Get the selected date on the input screen and return it as a moment
     */
-    function getDate()
+    getDate: function()
     {
-      var day=document.getElementById("day").value;
-      var month=document.getElementById("month").value;
-      var year=document.getElementById("year").value;
-      var hour=document.getElementById("hour").value;
-      var min=document.getElementById("min").value;
-      var ampm=document.getElementById("ampm").value;
+      var day=this.dayDropdown.value;
+      var month=this.monthDropdown.value;
+      var year=this.yearDropdown.value;
+      var hour=this.hourDropdown.value;
+      var min=this.minDropdown.value;
+      var ampm=this.ampmDropdown.value;
 
       var date;
-      if(checkClockType()=="12")
+      if(this.checkClockType()=="12")
       {
         date=moment(month+"/"+day+"/"+year+" "+hour+":"+min+" "+ampm,"M/D/YYYY h:mm a");
       }
@@ -322,78 +327,69 @@
         date=moment(month+"/"+day+"/"+year+" "+hour+":"+min,"M/D/YYYY H:m");
       }
 
-      date.utcOffset(parseInt(currentLocation.timezone+tzAdjustment), true);
+      date.utcOffset(parseInt(this.currentLocation.timezone+this.tzAdjustment), true);
 
       return date;
-    }
+    },
 
     /*
     Set the current date to a date
     */
-    function setDate(date)
+    setDate: function(date)
     {
-      oldDate=currentDate;
-      currentDate=date;
+      this.oldDate=this.currentDate;
+      this.currentDate=date;
 
-      if(oldDate.month()!=currentDate.month())
+      if(!this.currentDate.isValid()||this.oldDate.month()!=this.currentDate.month())
       {
-        handleMonthChange2();
+        this.handleMonthChange();
       }
-    }
+    },
 
 
     /*
     Set the date selected on the input screen to a moment
     */
-    function updateDate(date)
+    updateDate: function(date)
     {
-      document.getElementById("day").value=date.date();
-      document.getElementById("month").value=date.month()+1;
-      document.getElementById("year").value=date.year();
-      document.getElementById("min").value=date.minute();
+      this.dayDropdown.value=date.date();
+      this.monthDropdown.value=date.month()+1;
+      this.yearDropdown.value=date.year();
+      this.minDropdown.value=date.minute();
 
 
-      if(checkClockType()=="12")
+      if(this.checkClockType()=="12")
       {
-        document.getElementById("hour").value=date.clone().format("h");
-        document.getElementById("ampm").value=date.clone().format("a").charAt(0);
+        this.hourDropdown.value=date.clone().format("h");
+        this.ampmDropdown.value=date.clone().format("a").charAt(0);
       }
       else {
-        document.getElementById("hour").value=date.hour();
+        this.hourDropdown.value=date.hour();
       }
-    }
+    },
 
 
-
+	//TODO why use paramters when we can use this.oldDate?
     /*
     Calculate old date and timezone to currentTimezone
     */
-    function calculateDate(oldDate)
+    calculateDate: function(date)
     {
-	  calculateTzAdjustment();
-      var date=oldDate.clone().utcOffset(currentLocation.timezone+tzAdjustment);
-      return date;
-    }
-
-    /*
-    Get the selected timezone on the input screen
-    */
-    function getTimezone()
-    {
-	  return parseInt(document.getElementById("timezone").value);
-      //return parseInt(document.getElementById("timezone").value)+parseInt(document.getElementById("tzAdjustment").innerHTML);
-    }
+	  this.calculateTzAdjustment();
+      var newDate=date.clone().utcOffset(this.currentLocation.timezone+this.tzAdjustment);
+      return newDate;
+    },
 
     /*
     Calculate and set the timezone using the current location
     */
-    function calculateTzAdjustment()
+    calculateTzAdjustment: function()
     {
       //if location observes DST, add 1
-      if(moment(currentDate.clone().format("MM/DD/YYYY"),"MM/DD/YYYY").isDST()
-         &&currentLocation.observeDST)
+      if(moment(this.currentDate.clone().format("MM/DD/YYYY"),"MM/DD/YYYY").isDST()
+         &&this.currentLocation.observeDST)
       {
-		tzAdjustment=1;
+		this.tzAdjustment=1;
 		
 		//updateTzAdjustment
 		document.getElementById("tzAdjustment").innerHTML="1";
@@ -401,23 +397,23 @@
       }
       else
       {
-		tzAdjustment=0;
+		this.tzAdjustment=0;
 		
 		//updateTzAdjustment
 		document.getElementById("tzAdjustment").innerHTML="0";
       }
 	  
-    }
+    },
 
     /*
     Called when user changes the date on the input screen
     */
-    function changeDate()
+    changeDate: function()
     {
-      setDate(getDate());
-      calculateTzAdjustment();
-      drawCanvas();
-    }
+      this.setDate(this.getDate());
+      this.calculateTzAdjustment();
+      this.drawCanvas();
+    },
 
     /*
     This function will enable or disable the am/pm drop-down selection
@@ -425,31 +421,29 @@
     This function will convert the time drop-down boxes to 12hr or 24hr format
     if the user changes the clock type to or from 12 to 24 hour.
     */
-    function updateClockType()
+    updateClockType: function()
     {
-      //grab the hour selection box
-      var hourDropDown=document.getElementById("hour");
 
       //grab the selected hour on page
-      var hour=document.getElementById("hour").value;
+      var hour=this.hourDropdown.value;
 
       //check which clock type is selected(12 or 24)
-      if(checkClockType()=="12")
+      if(this.checkClockType()=="12")
       {
         //if clock type is 12 enable the am/pm selection box
-        document.getElementById("ampm").disabled=false;
+        this.ampmDropdown.disabled=false;
 
         //delete options from hour selection box
-        for(var i=hourDropDown.length; i>=0; i--)
+        for(var i=this.hourDropdown.length; i>=0; i--)
         {
-          hourDropDown.remove(i);
+          this.hourDropdown.remove(i);
         }
 
         //create 12am/12pm option and add to hour selection
         var option = document.createElement("option");
         option.value="12";
         option.text="12";
-        hourDropDown.add(option);
+        this.hourDropdown.add(option);
 
         //create 1-11am/pm options and add to hour selection
         for(var i=1; i<=11; i++)
@@ -457,23 +451,23 @@
           option = document.createElement("option");
           option.value=i;
           option.text=i;
-          hourDropDown.add(option);
+          this.hourDropdown.add(option);
         }
 
         //create a moment using the selected hour and convert to 12 hour format
         var hourMoment=moment(hour,"HH");
-        document.getElementById("hour").value=parseInt(hourMoment.clone().format("hh"));
-        document.getElementById("ampm").value=hourMoment.format("a").charAt(0);
+        this.hourDropdown.value=parseInt(hourMoment.clone().format("hh"));
+        this.ampmDropdown.value=hourMoment.format("a").charAt(0);
       }
       else
       {
         //if clock type is 24 disable the am/pm selection box
-        document.getElementById("ampm").disabled=true;
+        this.ampmDropdown.disabled=true;
 
         //delete options from hour selection box
-        for(var i=hourDropDown.length; i>=0; i--)
+        for(var i=this.hourDropdown.length; i>=0; i--)
         {
-          hourDropDown.remove(i);
+          this.hourDropdown.remove(i);
         }
 
         //create 0-23 hour options and add to hour selection
@@ -483,30 +477,31 @@
           option = document.createElement("option");
           option.value=i;
           option.text =i;
-          hourDropDown.add(option);
+          this.hourDropdown.add(option);
         }
 
         //create a moment from the selected hour and selected am/pm
         //and convert to 24 hour format.
-        var hourMoment=moment(hour+" "+document.getElementById("ampm").value,"hh a");
-        document.getElementById("hour").value=parseInt(hourMoment.clone().format("HH"));
+        var hourMoment=moment(hour+" "+this.ampmDropdown.value,"hh a");
+        this.hourDropdown.value=parseInt(hourMoment.clone().format("HH"));
       }
 
-      plotSunPoints();
-    }
+      this.plotSunPoints();
+    },
 
 
 
     //This function will determine which radio button for clock
     //type (12 or 24) is checked and return
-    function checkClockType() {
+    checkClockType: function()
+	{
       if(document.getElementById("clockType12").checked) {
         return "12";
       }
       else {
         return "24";
       }
-    }
+    },
 
 
 
@@ -514,20 +509,18 @@
     This function will update the day selection options (0-31) if the user
     changes the month selection.
     */
-    function handleMonthChange2() {
-      var day=currentDate.clone().format("D");
-      //var month=currentDate.clone.format("MM");
-      //var year=currentDate.clone.format("YYYY");
+    handleMonthChange: function()
+	{
+	  var day;
+	  var daysInMonth;
 
-      //var daysInMonth=moment(month+"-"+year, "MM-YYYY").daysInMonth();
-      var daysInMonth=moment(currentDate.clone().format("MM-YYYY"),"MM-YYYY").daysInMonth();
+      daysInMonth=moment(this.monthDropdown.value,"M").daysInMonth();
 
-      var dayDropDown=document.getElementById("day");
 
       //delete options from day selection box
-      for(var i=dayDropDown.length; i>=0; i--)
+      for(var i=this.dayDropdown.length; i>=0; i--)
       {
-        dayDropDown.remove(i);
+        this.dayDropdown.remove(i);
       }
 
       //create 0-daysInMonth options in day selection drop-down
@@ -538,7 +531,7 @@
         option = document.createElement("option");
         option.value =i;
         option.text =i;
-        dayDropDown.add(option);
+        this.dayDropdown.add(option);
       }
 
       //if the date is greater than the number of days
@@ -547,47 +540,55 @@
       {
         day=daysInMonth;
       }
-      document.getElementById("day").value=day;
-    }
+      this.dayDropdown.value=day;
+	  
+	  if(!this.currentDate.isValid())
+	  {
+		  this.currentDate=this.getDate();
+	  }
+    },
 
     /*
     Called when user changes the timezone on input screen
     Converts the time in old timezone to new timezone
     */
-    function handleTimezoneChange()
+    handleTimezoneChange: function()
     {
-      oldDate=getDate();
-      currentLocation.timezone=parseInt(document.getElementById("timezone").value); //TODO need set method or no?
-      updateDate(calculateDate(oldDate));
-      setDate(getDate());
-      drawCanvas();
-    }
+      this.oldDate=this.getDate();
+      this.currentLocation.timezone=parseInt(this.tzDropdown.value); //TODO need set method or no?
+      this.updateDate(this.calculateDate(this.oldDate));
+      this.setDate(this.getDate());
+      this.drawCanvas();
+    },
 
     /*
     called when user changes frameRate on input pane
     */
-    function handleFrameRateChange()
+    handleFrameRateChange: function()
     {
-      fps=document.getElementById("frameRate").value;
-    }
+      this.fps=this.frameRateInput.value;
+    },
 
     /*
     called when user changes play speed on input pane
     */
-    function handleSpeedChange()
+    handleSpeedChange: function()
     {
-      playSpeed=document.getElementById("playSpeed").value*60;
-    }
+      this.playSpeed=document.getElementById("playSpeed").value*60;
+    },
 
 
     /*
     This function will draw the moon with a given moment,
     a latitude and longitude.
     */
-    function drawMoon(moment,latitude, longitude)
+    drawMoon: function()
     {
-      //convert moment to JS date object
-      var timeAndDate=moment.clone().toDate();
+	  var latitude=this.currentLocation.latitude;
+      var longitude=this.currentLocation.longitude;
+		
+      //convert moment to JS date
+      var timeAndDate=this.currentDate.clone().toDate();
 
       //calculate moon alitude and azimuth
       var moonPos=SunCalc.getMoonPosition(/*Date*/ timeAndDate, /*Number*/ latitude, /*Number*/ longitude);
@@ -595,20 +596,20 @@
       var moonAzimuth=moonPos.azimuth*180/Math.PI+180;
 
       //adjust azimuth if needed
-      if(latitude<currentDeclination)
+      if(latitude<this.currentDeclination)
       {
         moonAzimuth=(moonAzimuth+180)%360;
       }
 
       //draw moon on canvas
-      sunMoonStarCtx.beginPath();
-      sunMoonStarCtx.arc(xCoord(moonAzimuth),yCoord(moonAltitude),8,0,2*Math.PI);
-      sunMoonStarCtx.strokeStyle = '#990000';
-      sunMoonStarCtx.stroke();
-      sunMoonStarCtx.fillStyle = '#ffffff';
-      sunMoonStarCtx.fill();
-      sunMoonStarCtx.closePath();
-    }
+      this.sunMoonStarCtx.beginPath();
+      this.sunMoonStarCtx.arc(this.xCoord(moonAzimuth),this.yCoord(moonAltitude),8,0,2*Math.PI);
+      this.sunMoonStarCtx.strokeStyle = '#990000';
+      this.sunMoonStarCtx.stroke();
+      this.sunMoonStarCtx.fillStyle = '#ffffff';
+      this.sunMoonStarCtx.fill();
+      this.sunMoonStarCtx.closePath();
+    },
 
 
 
@@ -616,12 +617,12 @@
     This function calculates and plots red dots/circles for every hour (0-23)
     indicating where the sun is at the beginning of each hour HH:00
     */
-    function plotSunPoints()
+    plotSunPoints: function()
     {
       //A moment counter that will be incremented every hour
-      var momentCounter=moment(currentDate.clone().format("MM/DD/YYYY"),"MM/DD/YYYY").utcOffset(currentLocation.timezone+tzAdjustment);
-      var latitude=currentLocation.latitude;
-      var longitude=currentLocation.longitude;
+      var momentCounter=moment(this.currentDate.clone().format("MM/DD/YYYY"),"MM/DD/YYYY").utcOffset(this.currentLocation.timezone+this.tzAdjustment);
+      var latitude=this.currentLocation.latitude;
+      var longitude=this.currentLocation.longitude;
 
 
       //JS Date object required for SunCalc library
@@ -630,7 +631,7 @@
       //Used to store Altitude and Azimuth of the sun at the beginning of an hour
       var sunHourAltitude, sunHourAzimuth;
 
-      sunPointsCtx.clearRect(0,0, c1.width, c1.height);
+      this.sunPointsCtx.clearRect(0,0, this.c1.width, this.c1.height);
 
       //Loop through every hour
       for(count=0;count<=23; count++)
@@ -644,21 +645,21 @@
         sunHourAzimuth=sunPos.azimuth*180/Math.PI+180;
 
         //adjust azimuth if necessary
-        if(latitude<currentDeclination)
+        if(latitude<this.currentDeclination)
         {
           sunHourAzimuth=(sunHourAzimuth+180)%360;
         }
 
         //draw the red circle/dots
-        sunPointsCtx.beginPath();
-        sunPointsCtx.arc(xCoord(sunHourAzimuth),yCoord(sunHourAltitude),3,0,2*Math.PI);
-        sunPointsCtx.strokeStyle = '#990000';
-        sunPointsCtx.stroke();
-        sunPointsCtx.closePath();
+        this.sunPointsCtx.beginPath();
+        this.sunPointsCtx.arc(this.xCoord(sunHourAzimuth),this.yCoord(sunHourAltitude),3,0,2*Math.PI);
+        this.sunPointsCtx.strokeStyle = '#990000';
+        this.sunPointsCtx.stroke();
+        this.sunPointsCtx.closePath();
 
         //determine the hour label format to be printed next to each point
         var hourString;
-        if(checkClockType()=="12")
+        if(this.checkClockType()=="12")
         {
           hourString=momentCounter.clone().format("ha");
         }
@@ -669,9 +670,9 @@
 
 
         //draw sun point hour text label
-        sunPointsCtx.fillStyle = textColor;
-        sunPointsCtx.font = "10px Arial";
-        sunPointsCtx.fillText(hourString,Math.round(xCoord(sunHourAzimuth+1)),Math.round(yCoord(sunHourAltitude+1)));
+        this.sunPointsCtx.fillStyle = this.textColor;
+        this.sunPointsCtx.font = "10px Arial";
+        this.sunPointsCtx.fillText(hourString,Math.round(this.xCoord(sunHourAzimuth+1)),Math.round(this.yCoord(sunHourAltitude+1)));
 
         //increment the moment object by an hour
         momentCounter.add(1,'h');
@@ -680,86 +681,63 @@
 	  
 	  //draw directionLabels
       var directionsLabels;
-      if(latitude>currentDeclination)
+      if(latitude>this.currentDeclination)
       {
         directionsLabels=["North","East","South","West"];
       }
       else {
         directionsLabels=["South","West","North","East"];
       }
-      sunPointsCtx.fillStyle=textColor;
-      sunPointsCtx.font = "14px Arial";
-	  sunPointsCtx.fillText(directionsLabels[0],3,yCoord(90-5));
-      sunPointsCtx.fillText(directionsLabels[1],c1.width*.25+3,yCoord(90-5));
-      sunPointsCtx.fillText(directionsLabels[2],c1.width*.5+3,yCoord(90-5));
-      sunPointsCtx.fillText(directionsLabels[3],c1.width*.75+3,yCoord(90-5));
+      this.sunPointsCtx.fillStyle=this.textColor;
+      this.sunPointsCtx.font = "14px Arial";
+	  this.sunPointsCtx.fillText(directionsLabels[0],3,this.yCoord(90-5));
+      this.sunPointsCtx.fillText(directionsLabels[1],this.c1.width*.25+3,this.yCoord(90-5));
+      this.sunPointsCtx.fillText(directionsLabels[2],this.c1.width*.5+3,this.yCoord(90-5));
+      this.sunPointsCtx.fillText(directionsLabels[3],this.c1.width*.75+3,this.yCoord(90-5));
 	  
 	  
 	  
 	  //draw degree labels
       for(var count=10; count<=90; count=count+10)
       {
-        sunPointsCtx.font = "10px Arial";
-        sunPointsCtx.fillText(count+" deg",c1.width*.95,yCoord(count-2));
+        this.sunPointsCtx.font = "10px Arial";
+        this.sunPointsCtx.fillText(count+" deg",this.c1.width*.95,this.yCoord(count-2));
       }
-    }
-
-
-
-    //Sine and Cosine functions that take degrees as arguments.
-    function sin(angle)
-    {
-      return Math.sin(Math.PI/180*angle);
-    }
-    function cos(angle)
-    {
-      return Math.cos(Math.PI/180*angle);
-    }
-
-
-
-    //Seeded Random Number generator
-    //http://indiegamr.com/generate-repeatable-random-numbers-in-js/
-    Math.seed=6;
-    Math.seededRandom=function(max,min){
-      max=max||1;
-      min=min||0;
-
-      Math.seed = (Math.seed * 9301 + 49297) % 233280;
-      var rnd = Math.seed / 233280;
-      return min + rnd * (max - min);
-    }
+    },
 
     /*
       This function pushes random values of declination and hour displacements
       into the respective arrays for every star to be generated.
     */
-    function initializeStarsArrays(numberOfStars)
+    initializeStarsArrays: function(numberOfStars)
     {
       //generate random declination and hour displacements
       Math.seed=6;
       for(var count=0; count<numberOfStars; count++)
       {
-        starDeclination.push(Math.seededRandom()*180-90);
-        hourDisplacement.push(Math.seededRandom()*24);
+        this.starDeclination.push(Math.seededRandom()*180-90);
+        this.hourDisplacement.push(Math.seededRandom()*24);
       }
-    }
+    },
 
 
 
     //TODO 2) make stars vary with longitude
-    function drawStars(moment,latitude,longitude,altitude,azimuth)
+    drawStars: function()
     {
+	  var latitude=this.currentLocation.latitude;
+      var longitude=this.currentLocation.longitude;
+		
       //convert moment to JS date
-      var timeAndDate=moment.clone().toDate();
+      var timeAndDate=this.currentDate.clone().toDate();
 
       //calculate star altitde and azimuth for every RNG based declination
       //and hour displacement in arrays.
-      for(var i=0; i<starDeclination.length;i++)
+      for(var i=0; i<this.starDeclination.length;i++)
       {
-        var hour=(timeAndDate.getHours()+timeAndDate.getMinutes()/60+hourDisplacement[i])%24;
-        starAltitude=180/Math.PI*Math.asin(cos(latitude)*cos(hour*15)*cos(starDeclination[i])+sin(latitude)*sin(starDeclination[i]));
-        starAzimuth=180/Math.PI*Math.acos((sin(starAltitude)*sin(latitude)-sin(starDeclination[i]))/(cos(starAltitude)*cos(latitude)));
+        var hour=(timeAndDate.getHours()+timeAndDate.getMinutes()/60+this.hourDisplacement[i])%24;
+        starAltitude=180/Math.PI*Math.asin(cos(latitude)*cos(hour*15)*cos(this.starDeclination[i])+sin(latitude)*sin(this.starDeclination[i]));
+        starAzimuth=180/Math.PI*Math.acos((sin(starAltitude)*sin(latitude)-sin(this.starDeclination[i]))/(cos(starAltitude)*cos(latitude)));
 
         //star azimuth adjustment
         if((hour*15)>180)
@@ -769,7 +747,7 @@
         starAzimuth=(starAzimuth+180)%360;
 
         //adjust azimuth if needed
-        if(latitude<currentDeclination)
+        if(latitude<this.currentDeclination)
         {
             starAzimuth=(starAzimuth+180)%360;
         }
@@ -777,14 +755,14 @@
         //only draw stars with altitude above 0 degrees(above horizon)
         if(starAltitude>0)
         {
-          sunMoonStarCtx.beginPath();
-          sunMoonStarCtx.arc(xCoord(starAzimuth),yCoord(starAltitude),1,0,2*Math.PI);
-          sunMoonStarCtx.fillStyle = 'white';
-          sunMoonStarCtx.fill();
-          sunMoonStarCtx.closePath();
+          this.sunMoonStarCtx.beginPath();
+          this.sunMoonStarCtx.arc(this.xCoord(starAzimuth),this.yCoord(starAltitude),1,0,2*Math.PI);
+          this.sunMoonStarCtx.fillStyle = 'white';
+          this.sunMoonStarCtx.fill();
+          this.sunMoonStarCtx.closePath();
         }
       }
-    }
+    },
 
 
 
@@ -792,109 +770,109 @@
     This function sets the drop down box dates and time to the current time
     in the given UTC zone.
     */
-    function now()
+    now: function()
     {
       //initialize a default moment(uses current time) and offset
-      var momentNow=moment().utcOffset(parseInt(currentLocation.timezone+tzAdjustment),false);
+      var momentNow=moment().utcOffset(parseInt(this.currentLocation.timezone+this.tzAdjustment),false);
 
 
-      updateDate(momentNow);
-      setDate(momentNow);
-	  calculateTzAdjustment();
-      drawCanvas();
-    }
+      this.updateDate(momentNow);
+      this.setDate(momentNow);
+	  this.calculateTzAdjustment();
+      this.drawCanvas();
+    },
 
-    function playInitialize()
+    playInitialize: function()
     {
-      if(document.getElementById("playbutton").innerHTML=="Play")
+      if(this.playButton.innerHTML=="Play")
       {
         //if user clicks play button, change it to a stop button and disable other buttons
-        document.getElementById("locationName").disabled=true;
-        document.getElementById("timezone").disabled=true;
-        document.getElementById("day").disabled=true;
-        document.getElementById("month").disabled=true;
-        document.getElementById("year").disabled=true;
-        document.getElementById("hour").disabled=true;
-        document.getElementById("min").disabled=true;
-        document.getElementById("ampm").disabled=true;
-        document.getElementById("currentButton").disabled=true;
-        document.getElementById("playStart").disabled=true;
-        document.getElementById("frameRate").disabled=true;
-        document.getElementById("playbutton").innerHTML="Stop";
+        this.locationDropdown.disabled=true;
+        this.tzDropdown.disabled=true;
+        this.dayDropdown.disabled=true;
+        this.monthDropdown.disabled=true;
+        this.yearDropdown.disabled=true;
+        this.hourDropdown.disabled=true;
+        this.minDropdown.disabled=true;
+        this.ampmDropdown.disabled=true;
+        this.currentButton.disabled=true;
+        this.playStartCheckbox.disabled=true;
+        this.frameRateInput.disabled=true;
+        this.playButton.innerHTML="Stop";
 
         var momentCounter;
 
         //set the moment increment counter to the beginning of the day if
         //user checks the corresponding option, otherwise set to current time
-        if(document.getElementById("playStart").checked)
+        if(this.playStartCheckbox.checked)
         {
-          momentCounter=moment(currentDate.clone().format("M/D/YYYY")+" 0","M/D/YYYY H").utcOffset(currentLocation.timezone+tzAdjustment,true);
+          momentCounter=moment(this.currentDate.clone().format("M/D/YYYY")+" 0","M/D/YYYY H").utcOffset(this.currentLocation.timezone+this.tzAdjustment,true);
         }
         else
         {
-          momentCounter=moment(getDate());
+          momentCounter=moment(this.getDate());
         }
 
-        var delay=1000/fps; //milisec
+        var delay=1000/this.fps; //milisec
 
         //for each second passed in real life, the animation will play x seconds
         //of the day
-        //var SecondsPlayedPerSecond=playSpeed;
+        //var SecondsPlayedPerSecond=this.playSpeed;
 
         //the amount of seconds to increment the moment counter each frame
-        //var playSecondInterval=SecondsPlayedPerSecond/fps;
+        //var playSecondInterval=SecondsPlayedPerSecond/this.fps;
 
 
-        interval=setInterval(play, delay, momentCounter);
+        this.interval=setInterval(this.play, delay, momentCounter);
       }
       else
       {
         //set play/stop button to play and enable buttons
-        document.getElementById("playbutton").innerHTML="Play";
-        document.getElementById("locationName").disabled=false;
-        document.getElementById("timezone").disabled=false;
-        document.getElementById("day").disabled=false;
-        document.getElementById("month").disabled=false;
-        document.getElementById("year").disabled=false;
-        document.getElementById("hour").disabled=false;
-        document.getElementById("min").disabled=false;
-        document.getElementById("ampm").disabled=false;
-        document.getElementById("playStart").disabled=false;
-        document.getElementById("frameRate").disabled=false;
-        document.getElementById("currentButton").disabled=false;
+        this.playButton.innerHTML="Play";
+        this.locationDropdown.disabled=false;
+        this.tzDropdown.disabled=false;
+        this.dayDropdown.disabled=false;
+        this.monthDropdown.disabled=false;
+        this.yearDropdown.disabled=false;
+        this.hourDropdown.disabled=false;
+        this.minDropdown.disabled=false;
+        this.ampmDropdown.disabled=false;
+        this.playStartCheckbox.disabled=false;
+        this.frameRateInput.disabled=false;
+        this.currentButton.disabled=false;
       }
-    }
+    },
 
-    function play(momentCounter)
+    play: function(momentCounter)
     {
-      var playSecondInterval=playSpeed/fps;
+      var playSecondInterval=SMSA.playSpeed/SMSA.fps;
 
       //if the user presses play button...
-      if(document.getElementById("playbutton").innerHTML=="Play")
+      if(SMSA.playButton.innerHTML=="Play")
       {
         //...stop the animaion
-        clearInterval(interval);
+        clearInterval(SMSA.interval);
       }
       else
       {
         //otherwise update and set the date, draw canvas, and increment
         //the counter
-        updateDate(momentCounter);
-        setDate(getDate());
-        drawCanvas();
+        SMSA.updateDate(momentCounter);
+        SMSA.setDate(SMSA.getDate());
+        SMSA.drawCanvas();
 
         momentCounter.add(playSecondInterval,"s");
       }
-    }
+    },
 
-    function drawCanvas()
+    drawCanvas: function()
     {
       //grab the location and date
-      var latitude=currentLocation.latitude;
-      var longitude=currentLocation.longitude;
+      var latitude=this.currentLocation.latitude;
+      var longitude=this.currentLocation.longitude;
 
       //clone current date moment into JS date time
-      var currentTimeAndDate=currentDate.clone().toDate();
+      var currentTimeAndDate=this.currentDate.clone().toDate();
 
       //Calculate Current sun position
       var currentSunPos=SunCalc.getPosition(/*Date*/ currentTimeAndDate, /*Number*/ latitude, /*Number*/ longitude);
@@ -902,11 +880,11 @@
       var sunAzimuth=currentSunPos.azimuth*180/Math.PI+180;
 
       //initialize color and gradient vars
-      skyCtx.beginPath();
+      this.skyCtx.beginPath();
       var color1="";
       var color2="";
       var skyColorType;
-      var grad=skyCtx.createLinearGradient(xCoord(0),yCoord(90),xCoord(0),yCoord(0));
+      var grad=this.skyCtx.createLinearGradient(this.xCoord(0),this.yCoord(90),this.xCoord(0),this.yCoord(0));
 
       //calculate the 2 sky colors(top and bottom) for the sky gradient
       //using the sun's altitude. set the skyColorType
@@ -944,50 +922,51 @@
       //add colors to gradient
       grad.addColorStop(0,color1);
       grad.addColorStop(1,color2);
-      skyCtx.fillStyle = grad;
+      this.skyCtx.fillStyle = grad;
 
       //necessary to prevent redundancy of redrawing of skies with same sky colors
-      if(skyColorType!=currentskyColorType){
+      if(skyColorType!=this.currentSkyColorType){
 
         //clear skyCanvas
-        skyCtx.clearRect(0,0, c1.width, c1.height);
+        this.skyCtx.clearRect(0,0, this.c1.width, this.c1.height);
 
-        currentskyColorType=skyColorType;
+        this.currentSkyColorType=skyColorType;
 
         //change text color and draw the sky.
-        textColor=(skyColorType=="day" ? "black" : "white");
-        skyCtx.fillRect(xCoord(0),yCoord(0),xCoord(360),-90*c1.height/120);
-        skyCtx.closePath();
+        this.textColor=(skyColorType=="day" ? "black" : "white");
+		this.crosshairColor=(skyColorType=="day" ? "#006400" : '#39FF14')
+        this.skyCtx.fillRect(this.xCoord(0),this.yCoord(0),this.xCoord(360),-90*this.c1.height/120);
+        this.skyCtx.closePath();
 
-        plotSunPoints();
+        this.plotSunPoints();
       }
 
       //clear sunMoonStarCanvas
-      sunMoonStarCtx.clearRect(0,0, c1.width, c1.height);
+      this.sunMoonStarCtx.clearRect(0,0, this.c1.width, this.c1.height);
 
       //check if the sun points need to be redrawn again
       //if the date has changed, the timezone has changed,
       //or the location has changed
-      if(!currentDate.isSame(oldDate, "date")||currentDate.utcOffset()!=oldDate.utcOffset()
-          ||(!currentLocation.isSame(oldLocation)&&islocationUpdated==false))
+      if(!this.currentDate.isSame(this.oldDate, "date")||this.currentDate.utcOffset()!=this.oldDate.utcOffset()
+          ||(!this.currentLocation.isSame(this.oldLocation)&&this.isLocationUpdated==false))
       {
         //calculate a new declination
-        currentDeclination=SunCalc.getPosition(/*Date*/ currentTimeAndDate, 90, 0).altitude*180/Math.PI;
+        this.currentDeclination=SunCalc.getPosition(/*Date*/ currentTimeAndDate, 90, 0).altitude*180/Math.PI;
 
         //plot 24 points for each hour
-        plotSunPoints();
-        islocationUpdated=true;
+        this.plotSunPoints();
+        this.isLocationUpdated=true;
 
         //calculate sunrise, sunset, and day length
         var sunTimes=SunCalc.getTimes(/*Date*/ currentTimeAndDate, /*Number*/ latitude, /*Number*/ longitude);
-        var sunrise=moment(sunTimes.sunrise).utcOffset(currentLocation.timezone+tzAdjustment,false);
-        var sunset=moment(sunTimes.sunset).utcOffset(currentLocation.timezone+tzAdjustment,false);
+        var sunrise=moment(sunTimes.sunrise).utcOffset(this.currentLocation.timezone+this.tzAdjustment,false);
+        var sunset=moment(sunTimes.sunset).utcOffset(this.currentLocation.timezone+this.tzAdjustment,false);
         var dayLength=sunset.diff(sunrise, 'minutes');
         var sunriseStr;
         var sunsetStr;
 
         //correctly format times
-        if(checkClockType()=="12")
+        if(this.checkClockType()=="12")
         {
           sunriseStr=sunrise.format("h:mm a");
           sunsetStr=sunset.format("h:mm a");
@@ -1005,41 +984,67 @@
       }
 
       //adjust azimuth if necessary
-      if(latitude<currentDeclination)
+      if(latitude<this.currentDeclination)
       {
         sunAzimuth=(sunAzimuth+180)%360;
       }
 
       //get sun color
-      var sunColor=gradientFunction(sunAltitude);
+      var sunColor=this.gradientFunction(sunAltitude);
 
       //draw sun
-      sunMoonStarCtx.beginPath();
-      sunMoonStarCtx.arc(xCoord(sunAzimuth),yCoord(sunAltitude),10,0,2*Math.PI);
-      sunMoonStarCtx.strokeStyle = '#990000';
-      sunMoonStarCtx.stroke();
-      sunMoonStarCtx.fillStyle = sunColor;
-      sunMoonStarCtx.fill();
-      sunMoonStarCtx.closePath();
+      this.sunMoonStarCtx.beginPath();
+      this.sunMoonStarCtx.arc(this.xCoord(sunAzimuth),this.yCoord(sunAltitude),10,0,2*Math.PI);
+      this.sunMoonStarCtx.strokeStyle = '#990000';
+      this.sunMoonStarCtx.stroke();
+      this.sunMoonStarCtx.fillStyle = sunColor;
+      this.sunMoonStarCtx.fill();
+      this.sunMoonStarCtx.closePath();
 
       //if the sun altitude is below 6 degrees of horizon, call draw stars
       if(sunAltitude<-6)
       {
-        drawStars(currentDate, latitude, longitude, sunAltitude,sunAzimuth);
+        this.drawStars();
       }
 
-      drawMoon(currentDate,latitude, longitude);
+      this.drawMoon();
 	  
 	  //draw crosshair
-	  sunMoonStarCtx.strokeStyle = '#39FF14';
-	  sunMoonStarCtx.beginPath();
-      sunMoonStarCtx.moveTo(crosshairPos.x-5,crosshairPos.y);
-      sunMoonStarCtx.lineTo(crosshairPos.x+5,crosshairPos.y);
-      sunMoonStarCtx.stroke();
-      sunMoonStarCtx.closePath();
-	  sunMoonStarCtx.beginPath();
-      sunMoonStarCtx.moveTo(crosshairPos.x,crosshairPos.y-5);
-      sunMoonStarCtx.lineTo(crosshairPos.x,crosshairPos.y+5);
-      sunMoonStarCtx.stroke();
-      sunMoonStarCtx.closePath();
+	  this.sunMoonStarCtx.strokeStyle = this.crosshairColor;
+	  this.sunMoonStarCtx.beginPath();
+      this.sunMoonStarCtx.moveTo(this.crosshairPos.x-5,this.crosshairPos.y);
+      this.sunMoonStarCtx.lineTo(this.crosshairPos.x+5,this.crosshairPos.y);
+      this.sunMoonStarCtx.stroke();
+      this.sunMoonStarCtx.closePath();
+	  this.sunMoonStarCtx.beginPath();
+      this.sunMoonStarCtx.moveTo(this.crosshairPos.x,this.crosshairPos.y-5);
+      this.sunMoonStarCtx.lineTo(this.crosshairPos.x,this.crosshairPos.y+5);
+      this.sunMoonStarCtx.stroke();
+      this.sunMoonStarCtx.closePath();
+    }
+};
+
+
+   //Sine and Cosine functions that take degrees as arguments.
+    function sin(angle)
+    {
+      return Math.sin(Math.PI/180*angle);
+    }
+    function cos(angle)
+    {
+      return Math.cos(Math.PI/180*angle);
+    }
+
+
+
+    //Seeded Random Number generator
+    //http://indiegamr.com/generate-repeatable-random-numbers-in-js/
+    Math.seed=6;
+    Math.seededRandom=function(max,min){
+      max=max||1;
+      min=min||0;
+
+      Math.seed = (Math.seed * 9301 + 49297) % 233280;
+      var rnd = Math.seed / 233280;
+      return min + rnd * (max - min);
     }
