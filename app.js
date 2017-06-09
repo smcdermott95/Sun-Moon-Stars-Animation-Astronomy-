@@ -25,6 +25,7 @@ var SMSA = {
     playStartCheckbox: document.getElementById("playStart"),
     frameRateInput:    document.getElementById("frameRate"),
     playButton:        document.getElementById("playbutton"),
+	mouseCoordPane:    document.getElementById("mouseCoordinates"),
 	
     starDeclination:   [89,0], //initilize array to store RNG'ed star declination position
     hourDisplacement:  [6,2],  //initilize array to store RNG'ed star hour positions
@@ -76,6 +77,8 @@ var SMSA = {
 	  
 	  //event listener
 	  c4.addEventListener("mousedown",this.handleMouseDown);
+	  c4.addEventListener("mousemove",this.handleMouseMove);
+	  c4.addEventListener("mouseleave",this.handleMouseLeave);
 
 
       //draw 10-80 degree altitude lines, in 10 degree increments
@@ -89,7 +92,7 @@ var SMSA = {
         this.graphCtx.closePath();
       }
 
-      //draw 180 degree azimith line
+      //draw 180 degree azimuth line
       this.graphCtx.beginPath();
       this.graphCtx.moveTo(this.xCoord(180),this.yCoord(0));
       this.graphCtx.lineTo(this.xCoord(180),this.yCoord(90));
@@ -97,7 +100,7 @@ var SMSA = {
       this.graphCtx.stroke();
       this.graphCtx.closePath();
 
-      //draw 90 and 270 degree azimith line
+      //draw 90 and 270 degree azimuth line
       for(var i=90; i<=270; i+=180)
       {
         this.graphCtx.beginPath();
@@ -172,20 +175,85 @@ var SMSA = {
 		console.log(SMSA.crosshairPos.x+","+SMSA.crosshairPos.y);
 		SMSA.drawCanvas();
 	},
-
-
-
-    //convert altitude angle(-30 to +90) to pixel y-coordinate on the canvas
-    yCoord: function(coord)
-    {
-      return -this.c1.height*.75/90*coord+.75*this.c1.height;
-    },
+	
+	handleMouseMove: function(event)
+	{
+		var mousePosPixels=SMSA.convertCoords(SMSA.c1,event.clientX,event.clientY);
+		var azimuth=SMSA.azimuth(mousePosPixels.x);
+		var altitude=SMSA.altitude(mousePosPixels.y);
+		
+		//adjust azimuth for southern hemisphere and, if needed, the lower northern hemisphere
+		if(SMSA.currentLocation.latitude<SMSA.currentDeclination)
+		{
+			azimuth=(azimuth+180)%360;
+		};
+		
+		SMSA.mouseCoordPane.innerHTML="Azimuth: "+azimuth+"° E of N";
+		
+		if(azimuth>=40&&azimuth<=50)
+		{
+			SMSA.mouseCoordPane.innerHTML+="(Due Northeast)";
+		}
+		else if(azimuth>=85&&azimuth<=95)
+		{
+			SMSA.mouseCoordPane.innerHTML+="(Due East)";
+		}
+		else if(azimuth>=130&&azimuth<=140)
+		{
+			SMSA.mouseCoordPane.innerHTML+="(Due Southeast)";
+		}
+		else if(azimuth>=175&&azimuth<=185)
+		{
+			SMSA.mouseCoordPane.innerHTML+="(Due South)";
+		}
+		else if(azimuth>=220&&azimuth<=230)
+		{
+			SMSA.mouseCoordPane.innerHTML+="(Due Southwest)";
+		}
+		else if(azimuth>=265&&azimuth<=275)
+		{
+			SMSA.mouseCoordPane.innerHTML+="(Due West)";
+		}
+		else if(azimuth>=310&&azimuth<=320)
+		{
+			SMSA.mouseCoordPane.innerHTML+="(Due Northwest)";
+		}
+		else if(azimuth>=355||azimuth<=5)
+		{
+			SMSA.mouseCoordPane.innerHTML+="(Due North)";
+		}
+		SMSA.mouseCoordPane.innerHTML+="<br>Altitude:   ";
+		SMSA.mouseCoordPane.innerHTML+=altitude+"° above horizon";
+	},
+	
+	handleMouseLeave: function(event)
+	{
+		SMSA.mouseCoordPane.innerHTML="Azimuth: N/A<br>Altitude: N/A";
+	},
+	
 
     //convert the azimuth angle (0 to 360 degrees east of north) to
     //an x-coordinate on the canvas
     xCoord: function(coord)
     {
       return coord/360*this.c1.width;
+    },
+
+    //convert altitude angle(-30 to +90) to pixel y-coordinate on the canvas
+    yCoord: function(coord)
+    {
+      return -this.c1.height*.75/90*coord+.75*this.c1.height;
+    },
+	
+	
+    azimuth: function(coord)
+    {
+      return Math.round(coord*360/this.c1.width);
+    },
+	
+	altitude: function(coord)
+    {
+      return Math.round((this.c1.height*.75-coord)/this.c1.height*120);
     },
 
     /*
@@ -511,11 +579,8 @@ var SMSA = {
     */
     handleMonthChange: function()
 	{
-	  var day;
-	  var daysInMonth;
-
-      daysInMonth=moment(this.monthDropdown.value,"M").daysInMonth();
-
+	  var day=this.dayDropdown.value;
+      var daysInMonth=moment(this.monthDropdown.value,"M").daysInMonth();
 
       //delete options from day selection box
       for(var i=this.dayDropdown.length; i>=0; i--)
@@ -538,9 +603,11 @@ var SMSA = {
       //in updated month then set the day to the highest date in month
       if(day>daysInMonth)
       {
-        day=daysInMonth;
+        this.dayDropdown.value=daysInMonth;
       }
-      this.dayDropdown.value=day;
+	  else{
+		  this.dayDropdown.value=day;
+	  }
 	  
 	  if(!this.currentDate.isValid())
 	  {
@@ -595,7 +662,7 @@ var SMSA = {
       var moonAltitude=moonPos.altitude*180/Math.PI;
       var moonAzimuth=moonPos.azimuth*180/Math.PI+180;
 
-      //adjust azimuth if needed
+      //adjust azimuth for southern hemisphere and, if needed, the lower northern hemisphere
       if(latitude<this.currentDeclination)
       {
         moonAzimuth=(moonAzimuth+180)%360;
@@ -644,7 +711,7 @@ var SMSA = {
         sunHourAltitude=sunPos.altitude*180/Math.PI;
         sunHourAzimuth=sunPos.azimuth*180/Math.PI+180;
 
-        //adjust azimuth if necessary
+        //adjust azimuth for southern hemisphere and, if needed, the lower northern hemisphere
         if(latitude<this.currentDeclination)
         {
           sunHourAzimuth=(sunHourAzimuth+180)%360;
@@ -731,7 +798,7 @@ var SMSA = {
       //convert moment to JS date
       var timeAndDate=this.currentDate.clone().toDate();
 
-      //calculate star altitde and azimuth for every RNG based declination
+      //calculate star altitude and azimuth for every RNG based declination
       //and hour displacement in arrays.
       for(var i=0; i<this.starDeclination.length;i++)
       {
@@ -746,7 +813,7 @@ var SMSA = {
         }
         starAzimuth=(starAzimuth+180)%360;
 
-        //adjust azimuth if needed
+        //adjust azimuth for southern hemisphere and, if needed, the lower northern hemisphere
         if(latitude<this.currentDeclination)
         {
             starAzimuth=(starAzimuth+180)%360;
@@ -784,9 +851,11 @@ var SMSA = {
 
     playInitialize: function()
     {
+		//if user clicks play button
       if(this.playButton.innerHTML=="Play")
       {
-        //if user clicks play button, change it to a stop button and disable other buttons
+        //set play/stop button from "Play" to "Stop" and disable input selections
+		this.playButton.innerHTML="Stop";
         this.locationDropdown.disabled=true;
         this.tzDropdown.disabled=true;
         this.dayDropdown.disabled=true;
@@ -798,7 +867,6 @@ var SMSA = {
         this.currentButton.disabled=true;
         this.playStartCheckbox.disabled=true;
         this.frameRateInput.disabled=true;
-        this.playButton.innerHTML="Stop";
 
         var momentCounter;
 
@@ -814,20 +882,13 @@ var SMSA = {
         }
 
         var delay=1000/this.fps; //milisec
-
-        //for each second passed in real life, the animation will play x seconds
-        //of the day
-        //var SecondsPlayedPerSecond=this.playSpeed;
-
-        //the amount of seconds to increment the moment counter each frame
-        //var playSecondInterval=SecondsPlayedPerSecond/this.fps;
-
-
+		
+		//play animation
         this.interval=setInterval(this.play, delay, momentCounter);
       }
-      else
+      else //else if user clicks stop button
       {
-        //set play/stop button to play and enable buttons
+        //set play/stop button from "Stop" to "Play" and enable input selections
         this.playButton.innerHTML="Play";
         this.locationDropdown.disabled=false;
         this.tzDropdown.disabled=false;
@@ -983,7 +1044,7 @@ var SMSA = {
         document.getElementById("infoPanel").innerHTML=sunTimesString;
       }
 
-      //adjust azimuth if necessary
+      //adjust azimuth for southern hemisphere and, if needed, the lower northern hemisphere
       if(latitude<this.currentDeclination)
       {
         sunAzimuth=(sunAzimuth+180)%360;
