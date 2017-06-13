@@ -1,6 +1,7 @@
 var SMSA = {
 
 	c1:             document.getElementById("skyCanvas"), //get canvas
+	c4:             document.getElementById("sunMoonStarCanvas"),
 	skyCtx:         null, //layer 1(backmost) for background sky color
 	graphCtx:       null, //layer 2 for grid lines
 	sunPointsCtx:   null, //layer 3 for sun hour points and text
@@ -21,19 +22,19 @@ var SMSA = {
 	vHemiDropdown:     document.getElementById("vHemi"),
 	hHemiDropdown:     document.getElementById("hHemi"),
 	tzDropdown:        document.getElementById("timezone"),
-    currentButton:     document.getElementById("currentButton"),
-    playStartCheckbox: document.getElementById("playStart"),
-    frameRateInput:    document.getElementById("frameRate"),
-    playButton:        document.getElementById("playbutton"),
+	currentButton:     document.getElementById("currentButton"),
+	playStartCheckbox: document.getElementById("playStart"),
+	frameRateInput:    document.getElementById("frameRate"),
+	playButton:        document.getElementById("playbutton"),
 	mouseCoordPane:    document.getElementById("mouseCoordinates"),
 	
-    starDeclination:   [89,0], //initilize array to store RNG'ed star declination position
-    hourDisplacement:  [6,2],  //initilize array to store RNG'ed star hour positions
+	starDeclination:   [89,0], //initilize array to store RNG'ed star declination position
+	hourDisplacement:  [6,2],  //initilize array to store RNG'ed star hour positions
 	
 	crosshairPos:      {x:0, y:0},  //position of crosshair
 
-    oldDate:           moment("0000", "YYYY"),  //the previous date before a date is changed
-    currentDate:       moment("0000", "YYYY"),  //the date after a date is changed
+	oldDate:           moment("0000", "YYYY"),  //the previous date before a date is changed
+	currentDate:       moment("0000", "YYYY"),  //the date after a date is changed
 	tzAdjustment:      0,         //offset used account for DST  
 	
     oldLocation:       null,            //the previous location before it is changed
@@ -71,14 +72,14 @@ var SMSA = {
       this.graphCtx = c2.getContext("2d");
       var c3 = document.getElementById("sunPointsCanvas");
       this.sunPointsCtx = c3.getContext("2d");
-      var c4 = document.getElementById("sunMoonStarCanvas");
-      this.sunMoonStarCtx = c4.getContext("2d");
+      //var c4 = document.getElementById("sunMoonStarCanvas");
+      this.sunMoonStarCtx = this.c4.getContext("2d");
 	  
 	  
 	  //event listener
-	  c4.addEventListener("mousedown",this.handleMouseDown);
-	  c4.addEventListener("mousemove",this.handleMouseMove);
-	  c4.addEventListener("mouseleave",this.handleMouseLeave);
+	  this.c4.addEventListener("mousedown",this.handleMouseDown);
+	  this.c4.addEventListener("mousemove",this.handleMouseMove);
+	  this.c4.addEventListener("mouseleave",this.handleMouseLeave);
 
 
       //draw 10-80 degree altitude lines, in 10 degree increments
@@ -171,8 +172,9 @@ var SMSA = {
 	
 	handleMouseDown: function(event)
 	{
+		//console.log(event.clientX+","+event.clientY);
 		SMSA.crosshairPos=SMSA.convertCoords(SMSA.c1,event.clientX,event.clientY);
-		console.log(SMSA.crosshairPos.x+","+SMSA.crosshairPos.y);
+		//console.log(SMSA.crosshairPos.x+","+SMSA.crosshairPos.y);
 		SMSA.drawCanvas();
 	},
 	
@@ -229,6 +231,22 @@ var SMSA = {
 	handleMouseLeave: function(event)
 	{
 		SMSA.mouseCoordPane.innerHTML="Azimuth: N/A<br>Altitude: N/A";
+	},
+	
+
+	changeCanvasSize: function(w)
+	{
+		document.getElementById("canvasesdiv").style.width=w+"px";
+		document.getElementById("canvasesdiv").style.height=(w/2)+"px";
+		document.getElementById("skyCanvas").style.width=w+"px";
+		document.getElementById("skyCanvas").style.height=(w/2)+"px";
+		document.getElementById("sunPointsCanvas").style.width=w+"px";
+		document.getElementById("sunPointsCanvas").style.height=(w/2)+"px";
+		document.getElementById("graphCanvas").style.width=w+"px";
+		document.getElementById("graphCanvas").style.height=(w/2)+"px";
+		document.getElementById("sunMoonStarCanvas").style.width=w+"px";
+		document.getElementById("sunMoonStarCanvas").style.height=(w/2)+"px";
+		
 	},
 	
 
@@ -659,6 +677,7 @@ var SMSA = {
 
       //calculate moon alitude and azimuth
       var moonPos=SunCalc.getMoonPosition(/*Date*/ timeAndDate, /*Number*/ latitude, /*Number*/ longitude);
+	  var moonIllumination=SunCalc.getMoonIllumination(timeAndDate, latitude, longitude);
       var moonAltitude=moonPos.altitude*180/Math.PI;
       var moonAzimuth=moonPos.azimuth*180/Math.PI+180;
 
@@ -669,6 +688,7 @@ var SMSA = {
       }
 
       //draw moon on canvas
+	  /*
       this.sunMoonStarCtx.beginPath();
       this.sunMoonStarCtx.arc(this.xCoord(moonAzimuth),this.yCoord(moonAltitude),8,0,2*Math.PI);
       this.sunMoonStarCtx.strokeStyle = '#990000';
@@ -676,6 +696,24 @@ var SMSA = {
       this.sunMoonStarCtx.fillStyle = '#ffffff';
       this.sunMoonStarCtx.fill();
       this.sunMoonStarCtx.closePath();
+	  */
+	  
+	  //console.log(moonPos.parallacticAngle*180/Math.PI+", "+moonIllumination.angle*180/Math.PI);
+	  this.sunMoonStarCtx.save();
+	  this.sunMoonStarCtx.translate(this.xCoord(moonAzimuth),this.yCoord(moonAltitude));
+	  this.sunMoonStarCtx.rotate(90+moonIllumination.angle-moonPos.parallacticAngle);
+	  this.sunMoonStarCtx.translate(-14,-14);
+	  this.sunMoonStarCtx.drawImage(document.getElementById("moonIMG"),0,0,28,28);
+	  
+	  var imgData=this.skyCtx.getImageData(this.xCoord(moonAzimuth),this.yCoord(moonAltitude),1,1);
+	  
+	  this.sunMoonStarCtx.beginPath();
+      this.sunMoonStarCtx.arc(14,14,12,0,2*Math.PI);
+      this.sunMoonStarCtx.fillStyle = "rgba("+imgData.data[0]+","+imgData.data[1]+","+imgData.data[2]+",0.55)";
+      this.sunMoonStarCtx.fill();
+      this.sunMoonStarCtx.closePath();
+	  
+	  this.sunMoonStarCtx.restore();
     },
 
 
