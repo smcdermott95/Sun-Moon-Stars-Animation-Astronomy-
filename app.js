@@ -376,7 +376,11 @@ var SMSA = {
 			  i=locationDB.locationVec.length; //break loop
 			}
 		  }
-	  
+
+		changeLocationOnMap(
+			{lat:((this.currentLocation.hemisphereNS=="n")? 1:-1) * (this.currentLocation.latitudeDegrees+this.currentLocation.latitudeMinutes/60),
+			 lng:((this.currentLocation.hemisphereEW=="e")? 1:-1) * (this.currentLocation.longitudeDegrees+this.currentLocation.longitudeMinutes/60)}
+			,map);
         this.drawCanvas();
 	  }
     },
@@ -388,6 +392,11 @@ var SMSA = {
     {
       this.locationDropdown.value="custom";
       this.setLocation(this.getLocation());
+	  
+		changeLocationOnMap(
+		{lat:((this.currentLocation.hemisphereNS=="n")? 1:-1) * (this.currentLocation.latitudeDegrees+this.currentLocation.latitudeMinutes/60),
+			lng:((this.currentLocation.hemisphereEW=="e")? 1:-1) * (this.currentLocation.longitudeDegrees+this.currentLocation.longitudeMinutes/60)}
+			,map);
       this.drawCanvas();
     },
 
@@ -430,6 +439,14 @@ var SMSA = {
       {
         this.handleMonthChange();
       }
+	  
+	  
+		if(mapReady)
+		{
+			//nite.init(map);
+			nite.setDate(this.currentDate.clone().toDate());
+			nite.refresh();
+		}
     },
 
 
@@ -452,6 +469,7 @@ var SMSA = {
       else {
         this.hourDropdown.value=date.hour();
       }
+	  
     },
 
 
@@ -1120,6 +1138,11 @@ var SMSA = {
       this.sunMoonStarCtx.lineTo(this.crosshairPos.x,this.crosshairPos.y+5);
       this.sunMoonStarCtx.stroke();
       this.sunMoonStarCtx.closePath();
+	  
+	  if(mapReady)
+	  {
+		drawSun(nite.calculatePositionOfSun(currentTimeAndDate));
+	  }
     }
 };
 

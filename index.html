@@ -5,7 +5,11 @@
     <script src="moment-with-locales.js" type="text/javascript"></script>
     <script src="location.js" type="text/javascript"></script>
     <script src="locationDB.js" type="text/javascript"></script>
+	<script src="map.js" type="text/javascript"></script>
+	<script src="https://rawgit.com/rossengeorgiev/nite-overlay/master/nite-overlay.js"></script>
     <!--<script src="app.js" type="text/javascript"></script>  included at bottom-->
+	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
     <style>
       #inputInterface
@@ -45,6 +49,11 @@
         left: 650px;
         top: -228px;
       }
+	  
+	#map {
+		height: 400px;
+		width: 100%;
+	}
     </style>
 
     <title>unnamed App</title>
@@ -195,8 +204,12 @@
       <canvas id="sunPointsCanvas" style="z-index: 3; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
       <canvas id="sunMoonStarCanvas" style="z-index: 4; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
     </div>
+	
+	<div id="map">
+	</div>
 
 	<img id="moonIMG" src="./moon.png" hidden/>
+	<img id="sunIMG" src="./sun.png" hidden/>
 	
     <script src="app.js" type="text/javascript"></script>
     <script>
@@ -205,6 +218,10 @@
       SMSA.initializeCanvases();
       SMSA.tempStartLocation();
     </script>
+	
+	<script async defer
+		src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAj6lwZ1kjjW8GL6sLfTvXzJNHYbK5qOYg&callback=initMap">
+	</script>
     <br>
 	
 
