@@ -1,230 +1,228 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <script src="https://rawgit.com/mourner/suncalc/master/suncalc.js" type="text/javascript"></script>
-    <script src="moment-with-locales.js" type="text/javascript"></script>
-    <script src="location.js" type="text/javascript"></script>
-    <script src="locationDB.js" type="text/javascript"></script>
+<head>
+	<script src="./lib/suncalc.js" type="text/javascript"></script>
+	<script src="./lib/moment-with-locales.js" type="text/javascript"></script>
+	<script src="location.js" type="text/javascript"></script>
+	<script src="locationDB.js" type="text/javascript"></script>
 	<script src="map.js" type="text/javascript"></script>
-	<script src="https://rawgit.com/rossengeorgiev/nite-overlay/master/nite-overlay.js"></script>
-    <!--<script src="app.js" type="text/javascript"></script>  included at bottom-->
+	<script src="./lib/nite-overlay.js"></script>
+	<!--<script src="app.js" type="text/javascript"></script>  included at bottom-->
 	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	
+	<style>
+		#inputInterface
+		{
+			padding:0;
+			margin-bottom:-216px;
+		}
 
-    <style>
-      #inputInterface
-      {
-        padding:0;
-        margin-bottom:-216px;
-      }
+		.inputSelection {
+			border-radius: 10px;
+			background: #cccccc;
+			padding: 10px;
+		}
 
-      .inputSelection {
-        border-radius: 10px;
-        background: #cccccc;
-        padding: 10px;
-      }
+		.inputTitle {
+			text-align: center;
+			padding:0px;
+			margin: 4px;
+			font-weight: bold;
+		}
 
-      .inputTitle {
-        text-align: center;
-        padding:0px;
-        margin: 4px;
-        font-weight: bold;
-      }
+		#location {
+			width: 250px;
+		}
 
-      #location {
-        width: 250px;
-      }
+		#dateTime {
+			width: 300px;
+			position: relative;
+			left: 300px;
+			top: -120px;
+		}
 
-      #dateTime {
-        width: 300px;
-        position: relative;
-        left: 300px;
-        top: -120px;
-      }
-
-      #playDiv
-      {
-        width: 300px;
-        position: relative;
-        left: 650px;
-        top: -228px;
-      }
+		#playDiv
+		{
+			width: 300px;
+			position: relative;
+			left: 650px;
+			top: -228px;
+		}
 	  
-	#map {
-		height: 400px;
-		width: 100%;
-	}
+		#map {
+			height: 400px;
+			width: 1200px;
+		}
     </style>
 
     <title>unnamed App</title>
-  </head>
-  <body>
-    <h1>Unnamed App</h1>
-    <p>
-      Description: A tool that allows one to visualize the movement of the sun,
-      moon and stars accross the sky at a certain location.
-      <a href="https://github.com/smcdermott95/Sun-Moon-Stars-Animation-Astronomy-">Github page</a>
-    </p>
+</head>
+<body>
+	<h1>Unnamed App</h1>
+	<p>
+		Description: A tool that allows one to visualize the movement of the sun,
+		moon and stars accross the sky at a certain location.
+		<a href="https://github.com/smcdermott95/Sun-Moon-Stars-Animation-Astronomy-">Github page</a>
+	</p>
 
-    <div id=inputInterface>
-    <!--location line-->
-    <div class="inputSelection" id="location">
-      <p class="inputTitle">Location</p>
-      Name:
-      <select id="locationName" onchange="SMSA.changeLocationName()">
-        <option value="custom">custom</option>
-        <script>
-          var locationDB = new LocationDB();
-          for(var i=0; i<locationDB.locationVec.length;i++)
-          {
-            document.write('<option value="'+locationDB.locationVec[i].name+'">'+locationDB.locationVec[i].name+'</option>');
-          }
-        </script>
-      </select><br>
-      Lattitude:
-      <select onchange="SMSA.changeLocation()" id="latDeg">
-        <script>
-          for(var i=0; i<=89;i++)
-          {
-            document.write('<option value="'+i+'">'+i+'</option>');
-          }
-        </script>
-      </select>°
-      <select onchange="SMSA.changeLocation()" id="latMin">
-        <script>
-          for(var i=0; i<=59;i++)
-          {
-            document.write('<option value="'+i+'">'+i+'</option>');
-          }
-        </script>
-      </select>'
-      <select onchange="SMSA.changeLocation()" id="vHemi">
-        <option value="n">N</option>
-        <option value="s">S</option>
-      </select><br>
-      Longitude:
-      <select onchange="SMSA.changeLocation()" id="lonDeg">
-        <script>
-          for(var i=0; i<=179;i++)
-          {
-            document.write('<option value="'+i+'">'+i+'</option>');
-          }
-        </script>
-      </select>°
-      <select onchange="SMSA.changeLocation()" id="lonMin">
-        <script>
-          for(var i=0; i<=59;i++)
-          {
-            document.write('<option value="'+i+'">'+i+'</option>');
-          }
-        </script>
-      </select>'
-      <select onchange="SMSA.changeLocation()" id="hHemi">
-        <option value="w">W</option>
-        <option value="e">E</option>
-      </select><br>
-      Timezone:
-      <select onchange="SMSA.handleTimezoneChange()" id="timezone">
-        <script>
-          for(var i=-12; i<=12;i++)
-          {
-            document.write('<option value="'+i+'">'+i+'</option>');
-          }
-        </script>
-      </select>
-	  +<span id="tzAdjustment">0</span>
-      <br>
-    </div>
+	<div id="inputInterface">
+		<!--location line-->
+		<div class="inputSelection" id="location">
+			<p class="inputTitle">Location</p>
+			Name:
+			<select id="locationName" onchange="SMSA.changeLocationName()">
+			<option value="custom">custom</option>
+			<script>
+				var locationDB = new LocationDB();
+				for(var i=0; i<locationDB.locationVec.length;i++)
+				{
+					document.write('<option value="'+locationDB.locationVec[i].name+'">'+locationDB.locationVec[i].name+'</option>');
+				}
+			</script>
+			</select><br>
+			Lattitude:
+			<select onchange="SMSA.changeLocation()" id="latDeg">
+				<script>
+				for(var i=0; i<=89;i++)
+				{
+					document.write('<option value="'+i+'">'+i+'</option>');
+				}
+				</script>
+			</select>°
+			<select onchange="SMSA.changeLocation()" id="latMin">
+				<script>
+					for(var i=0; i<=59;i++)
+					{
+						document.write('<option value="'+i+'">'+i+'</option>');
+					}
+				</script>
+			</select>'
+			<select onchange="SMSA.changeLocation()" id="vHemi">
+				<option value="n">N</option>
+				<option value="s">S</option>
+			</select><br>
+			Longitude:
+			<select onchange="SMSA.changeLocation()" id="lonDeg">
+				<script>
+					for(var i=0; i<=179;i++)
+					{
+						document.write('<option value="'+i+'">'+i+'</option>');
+					}
+				</script>
+			</select>°
+			<select onchange="SMSA.changeLocation()" id="lonMin">
+				<script>
+					for(var i=0; i<=59;i++)
+					{
+						document.write('<option value="'+i+'">'+i+'</option>');
+					}
+				</script>
+			</select>'
+			<select onchange="SMSA.changeLocation()" id="hHemi">
+				<option value="w">W</option>
+				<option value="e">E</option>
+			</select><br>
+			Timezone:
+			<select onchange="SMSA.handleTimezoneChange()" id="timezone">
+				<script>
+					for(var i=-12; i<=12;i++)
+					{
+					document.write('<option value="'+i+'">'+i+'</option>');
+					}
+				</script>
+			</select>
+			+<span id="tzAdjustment">0</span>
+			<br>
+		</div>
 
 
-    <!--Date line-->
-    <div class="inputSelection" id="dateTime">
-      <p class="inputTitle">Date and Time</p>
-      Date:
-      <select onchange="SMSA.changeDate()" id="month">
-        <script>
-          for(var i=1; i<=12;i++)
-          {
-            document.write('<option value="'+i+'">'+i+'</option>');
-          }
-        </script>
-      </select>
-      <select onchange="SMSA.changeDate()" id="day">
-      </select>
-      <select onchange="SMSA.changeDate()" id="year">
-        <script>
-          for(var i=1990; i<=2025;i++)
-          {
-            document.write('<option value="'+i+'">'+i+'</option>');
-          }
-        </script>
-      </select><br>
-        Time
-      <select onchange="SMSA.changeDate()" id="hour">
-        <script>
-            document.write('<option value="12">12</option>');
-            for(var i=1; i<=11;i++)
-            {
-              document.write('<option value="'+i+'">'+i+'</option>');
-            }
-        </script>
-      </select>
-      <select onchange="SMSA.changeDate()" id="min">
-        <script>
-          for(var i=0; i<=59;i++)
-          {
-            document.write('<option value="'+i+'">'+((i<10)?"0"+i:i)+'</option>');
-          }
-        </script>
-      </select>
-      <select id="ampm" onchange="SMSA.changeDate()">
-        <option value="a">AM</option>
-        <option value="p">PM</option>
-      </select>
-      <input type="radio" name="clockType" id="clockType12" value="12"  onclick="SMSA.updateClockType()" checked>12hr
-      <input type="radio" name="clockType" id="clockType24" value="24" onclick="SMSA.updateClockType()" >24hr<br>
-      <button type="button" id="currentButton" onclick="SMSA.now()">Use Current Time</button>
-    </div>
+		<!--Date line-->
+		<div class="inputSelection" id="dateTime">
+			<p class="inputTitle">Date and Time</p>
+			Date:
+			<select onchange="SMSA.changeDate()" id="month">
+				<script>
+					for(var i=1; i<=12;i++)
+					{
+						document.write('<option value="'+i+'">'+i+'</option>');
+					}
+				</script>
+			</select>
+			<select onchange="SMSA.changeDate()" id="day"></select>
+			<select onchange="SMSA.changeDate()" id="year">
+				<script>
+					for(var i=1990; i<=2025;i++)
+					{
+						document.write('<option value="'+i+'">'+i+'</option>');
+					}
+				</script>
+			</select><br>
+			Time
+			<select onchange="SMSA.changeDate()" id="hour">
+				<script>
+					document.write('<option value="12">12</option>');
+					for(var i=1; i<=11;i++)
+					{
+						document.write('<option value="'+i+'">'+i+'</option>');
+					}
+				</script>
+			</select>
+			<select onchange="SMSA.changeDate()" id="min">
+				<script>
+					for(var i=0; i<=59;i++)
+					{
+						document.write('<option value="'+i+'">'+((i<10)?"0"+i:i)+'</option>');
+					}
+				</script>
+			</select>
+			<select id="ampm" onchange="SMSA.changeDate()">
+				<option value="a">AM</option>
+				<option value="p">PM</option>
+			</select>
+			<input type="radio" name="clockType" id="clockType12" value="12"  onclick="SMSA.updateClockType()" checked>12hr
+			<input type="radio" name="clockType" id="clockType24" value="24" onclick="SMSA.updateClockType()" >24hr<br>
+			<button type="button" id="currentButton" onclick="SMSA.now()">Use Current Time</button>
+		</div>
 
-    <div class="inputSelection" id="playDiv">
-      <p class="inputTitle">Animation</p>
-      <button type="button" id="playbutton" onclick="SMSA.playInitialize()">Play</button>
-      <input type="checkbox" id="playStart" value="beginning">Start at beginning of day?<br><hr>
-      Frame Rate: <input type="text" id="frameRate" size="1" value="30" onchange="SMSA.handleFrameRateChange()"> FPS<br>
-      Play Speed: 1 Second=<input type="text" id="playSpeed" size="1" value="60" onchange="SMSA.handleSpeedChange()"> minutes
-    </div>
-    </div>
-
-    <p id="infoPanel">info panel</p>
-	<p id="mouseCoordinates">Azimuth: N/A<br>Altitude: N/A</p>
-
-    <div id="canvasesdiv" style="position:relative; width:1200px; height:600px">
-      <canvas id="skyCanvas" style="z-index: 1; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
-      <canvas id="graphCanvas" style="z-index: 2; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
-      <canvas id="sunPointsCanvas" style="z-index: 3; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
-      <canvas id="sunMoonStarCanvas" style="z-index: 4; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
-    </div>
-	
-	<div id="map">
+		<div class="inputSelection" id="playDiv">
+		  <p class="inputTitle">Animation</p>
+		  <button type="button" id="playbutton" onclick="SMSA.playInitialize()">Play</button>
+		  <input type="checkbox" id="playStart" value="beginning">Start at beginning of day?<br><hr>
+		  Frame Rate: <input type="text" id="frameRate" size="1" value="30" onchange="SMSA.handleFrameRateChange()"> FPS<br>
+		  Play Speed: 1 Second=<input type="text" id="playSpeed" size="1" value="60" onchange="SMSA.handleSpeedChange()"> minutes
+		</div>
 	</div>
+
+	<p id="infoPanel">info panel</p>
+	<p id="mouseCoordinates">Azimuth: N/A<br>Altitude: N/A</p>
+	
+	<div id="canvasesdiv" style="position:relative; width:1200px; height:600px">
+		<canvas id="skyCanvas" style="z-index: 1; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+		<canvas id="graphCanvas" style="z-index: 2; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+		<canvas id="sunPointsCanvas" style="z-index: 3; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+		<canvas id="sunMoonStarCanvas" style="z-index: 4; position:absolute; left:0px; top:0px;" width="1200" height="600"></canvas>
+	</div>
+	
+	<div id="map"></div>
 
 	<img id="moonIMG" src="./moon.png" hidden/>
 	<img id="sunIMG" src="./sun.png" hidden/>
 	
-    <script src="app.js" type="text/javascript"></script>
-    <script>
-      //var locationDB = new LocationDB();
-      SMSA.initializeStarsArrays(120);
-      SMSA.initializeCanvases();
-      SMSA.tempStartLocation();
-    </script>
+	<script src="app.js" type="text/javascript"></script>
+	<script>
+		//var locationDB = new LocationDB();
+		SMSA.initializeStarsArrays(120);
+		SMSA.initializeCanvases();
+		SMSA.tempStartLocation();
+	</script>
 	
 	<script async defer
-		src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAj6lwZ1kjjW8GL6sLfTvXzJNHYbK5qOYg&callback=initMap">
+		src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBMsO1sfJI8djX1LkDq4vYiXudrpKSi4Pk&callback=initMap">
 	</script>
     <br>
 	
 
     <p>Copyright(c) Sargent McDermott. All Rights Reserved.</p>
-  </body>
+</body>
 </html>

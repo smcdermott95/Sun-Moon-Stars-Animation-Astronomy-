@@ -2,6 +2,7 @@ var map;
 var marker;
 var sunMarker;
 var mapReady=false;
+var sun={anchor: {x:16, y:16},url: "./sun.png"};
 function initMap() {
 	var newYork = {lat: 40.717, lng: -74.000};
 		map = new google.maps.Map(document.getElementById('map'), {
@@ -13,16 +14,19 @@ function initMap() {
 		map: map
 	});
 	
-	sunMarker=new google.maps.Marker({
-		position: null,
-		map: map
-	})
 			
 	map.addListener('click', function(e) {
 	placeMarkerAndPanTo(e.latLng, map);
 	});
 	nite.init(map);
 	mapReady=true;
+	
+	//initialize sun marker to current location
+	sunMarker=new google.maps.Marker({
+	position: {lat:nite.getSunPosition().lat(), lng:nite.getSunPosition().lng()},
+		map: map,
+		icon: sun,
+	})
 }
 
 function placeMarkerAndPanTo(latLng, map) {
@@ -37,7 +41,7 @@ function placeMarkerAndPanTo(latLng, map) {
 	var tz;
 	var dst;
 	$.ajax({
-		url:"https://maps.googleapis.com/maps/api/timezone/json?location="+latLng.lat()+","+latLng.lng()+"&timestamp="+(Math.round((new Date().getTime())/1000)).toString()+"&key=AIzaSyDceyk4lA3fL76c9LwyP3BcjFzezEFVVxk",}
+		url:"https://maps.googleapis.com/maps/api/timezone/json?location="+latLng.lat()+","+latLng.lng()+"&timestamp="+(Math.round((new Date().getTime())/1000)).toString()+"&key=AIzaSyBMsO1sfJI8djX1LkDq4vYiXudrpKSi4Pk",}
 		).done(function(response){
 		if(response.timeZoneId != null){
 			tz=response.rawOffset/3600;
@@ -75,10 +79,26 @@ function changeLocationOnMap(latLng,map)
 
 function drawSun(latLng)
 {
+
 	sunMarker.setMap(null);
+	/*
+	sunMarker.position=latLng;
 	sunMarker=new google.maps.Marker({
 		position: latLng,
 		map: map,
-		icon: "./sun.png"
+		icon: sun
 	});
+	*/
+	sunMarker= new google.maps.Circle({
+		map: map,
+		center: latLng,
+		radius: 200000,
+		fillColor: "#FF0",
+		fillOpacity: 1,
+		strokeColor: "#F00",
+		strokeWeight: 1,
+		strokeOpacity: 1,
+		clickable: false,
+		editable: false
+        });
 }
