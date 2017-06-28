@@ -1,6 +1,8 @@
 var SMSA = {
 
 	c1:                document.getElementById("skyCanvas"), //get canvas
+	c2:                document.getElementById("graphCanvas"),
+	c3:                document.getElementById("sunPointsCanvas"),
 	c4:                document.getElementById("sunMoonStarCanvas"),
 	skyCtx:            null, //layer 1(backmost) for background sky color
 	graphCtx:          null, //layer 2 for grid lines
@@ -67,21 +69,37 @@ var SMSA = {
     //graph canvas
 	initializeCanvases: function()
 	{
+		//set contexts
 		this.skyCtx=this.c1.getContext("2d");
-		var c2 = document.getElementById("graphCanvas");
-		this.graphCtx = c2.getContext("2d");
-		var c3 = document.getElementById("sunPointsCanvas");
-		this.sunPointsCtx = c3.getContext("2d");
-		//var c4 = document.getElementById("sunMoonStarCanvas");
+		this.graphCtx = this.c2.getContext("2d");
+		this.sunPointsCtx = this.c3.getContext("2d");
 		this.sunMoonStarCtx = this.c4.getContext("2d");
 		
+		//size canvases to fit parent div
+		var w=document.getElementById("rightPane").offsetWidth-30;
+		this.c1.width=w;
+		this.c1.height=w/2;
+		this.c2.width=w;
+		this.c2.height=w/2;
+		this.c3.width=w;
+		this.c3.height=w/2;
+		this.c4.width=w;
+		this.c4.height=w/2;
+		document.getElementById("canvasesdiv").style.width=w+"px";
+		document.getElementById("canvasesdiv").style.height=(w/2)+"px";
 		
-		//event listener
+		
+		//event listeners
 		this.c4.addEventListener("mousedown",this.handleMouseDown);
 		this.c4.addEventListener("mousemove",this.handleMouseMove);
 		this.c4.addEventListener("mouseleave",this.handleMouseLeave);
+		window.addEventListener("resize", this.handleResize);
 
-
+		this.initializeGraph();
+	},
+	
+	initializeGraph()
+	{
 		//draw 10-80 degree altitude lines, in 10 degree increments
 		for(var count=10; count<=80; count=count+10)
 		{
@@ -190,7 +208,7 @@ var SMSA = {
 			azimuth=(azimuth+180)%360;
 		};
 		
-		SMSA.mouseCoordPane.innerHTML="Azimuth: "+azimuth+"° E of N";
+		SMSA.mouseCoordPane.innerHTML="<h3>Mouse Coordinates</h3><br>Azimuth: "+azimuth+"° E of N";
 		
 		if(azimuth>=40&&azimuth<=50)
 		{
@@ -230,23 +248,32 @@ var SMSA = {
 	
 	handleMouseLeave: function(event)
 	{
-		SMSA.mouseCoordPane.innerHTML="Azimuth: N/A<br>Altitude: N/A";
+		SMSA.mouseCoordPane.innerHTML="<h3>Mouse Coordinates</h3><br>Azimuth: N/A<br>Altitude: N/A";
+	},
+	
+	handleResize: function(event)
+	{
+		SMSA.resize(document.getElementById("rightPane").offsetWidth-30);
 	},
 	
 
-	changeCanvasSize: function(w)
+	resize: function(w)
 	{
+		this.c1.width=w;
+		this.c1.height=w/2;
+		this.c2.width=w;
+		this.c2.height=w/2;
+		this.c3.width=w;
+		this.c3.height=w/2;
+		this.c4.width=w;
+		this.c4.height=w/2;
+		
 		document.getElementById("canvasesdiv").style.width=w+"px";
 		document.getElementById("canvasesdiv").style.height=(w/2)+"px";
-		document.getElementById("skyCanvas").style.width=w+"px";
-		document.getElementById("skyCanvas").style.height=(w/2)+"px";
-		document.getElementById("sunPointsCanvas").style.width=w+"px";
-		document.getElementById("sunPointsCanvas").style.height=(w/2)+"px";
-		document.getElementById("graphCanvas").style.width=w+"px";
-		document.getElementById("graphCanvas").style.height=(w/2)+"px";
-		document.getElementById("sunMoonStarCanvas").style.width=w+"px";
-		document.getElementById("sunMoonStarCanvas").style.height=(w/2)+"px";
 		
+		this.currentSkyColorType=-1;
+		this.initializeGraph();
+		this.drawCanvas();
 	},
 	
 	//convert the azimuth angle (0 to 360 degrees east of north) to
@@ -306,11 +333,9 @@ var SMSA = {
 		var vHemi=this.vHemiDropdown.value;
 		var hHemi=this.hHemiDropdown.value;
 		var timezone=parseInt(this.tzDropdown.value);
-	  
-		//TODO get from on-screen UI
+
 		var observeDST=this.currentLocation.observeDST;
 
-		//this.oldLocation=this.currentLocation.clone();
 		var location=new Location(name,latDeg, latMin,vHemi,lonDeg,lonMin,hHemi,timezone,observeDST);
 		return location;
 	},
@@ -654,7 +679,7 @@ var SMSA = {
 	handleTimezoneChange: function()
 	{
 		this.oldDate=this.getDate();
-		this.currentLocation.timezone=parseInt(this.tzDropdown.value); //TODO need set method or no?
+		this.currentLocation.timezone=parseInt(this.tzDropdown.value);
 		this.updateDate(this.calculateDate(this.oldDate));
 		this.setDate(this.getDate());
 		this.drawCanvas();
@@ -1090,10 +1115,11 @@ var SMSA = {
 				sunsetStr=sunset.format("H:mm");
 			}
 			
-			var dayLengthStr=Math.floor(dayLength/60.0)+":"+Math.round(dayLength%60.0);
+			var minute=Math.round(dayLength%60.0);
+			var dayLengthStr=Math.floor(dayLength/60.0)+":"+ ((minute>9)? minute : ("0"+minute))+" hours";
 			
 			//output
-			var sunTimesString="Sunrise: "+sunriseStr+" Sunset: "+sunsetStr+" Day Length: "+dayLengthStr;
+			var sunTimesString="<h3>Times</h3><br>Sunrise: "+sunriseStr+"<br> Sunset: "+sunsetStr+"<br> Day Length: "+dayLengthStr;
 			document.getElementById("infoPanel").innerHTML=sunTimesString;
 		}
 

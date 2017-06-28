@@ -22,11 +22,25 @@ function initMap() {
 	mapReady=true;
 	
 	//initialize sun marker to current location
+	/*
 	sunMarker=new google.maps.Marker({
 	position: {lat:nite.getSunPosition().lat(), lng:nite.getSunPosition().lng()},
 		map: map,
 		icon: sun,
 	})
+	*/
+	sunMarker= new google.maps.Circle({
+		map: map,
+		center: {lat:nite.getSunPosition().lat(), lng:nite.getSunPosition().lng()},
+		radius: 200000,
+		fillColor: "#FF0",
+		fillOpacity: 1,
+		strokeColor: "#F00",
+		strokeWeight: 1,
+		strokeOpacity: 1,
+		clickable: false,
+		editable: false
+        });
 }
 
 function placeMarkerAndPanTo(latLng, map) {
