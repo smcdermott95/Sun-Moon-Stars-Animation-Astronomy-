@@ -30,20 +30,11 @@
 		}
     </style>
 
-    <title>unnamed App</title>
+    <title>Unnamed App</title>
 </head>
 <body>
 <div class="container">
 
-	<!--
-	<h1>Unnamed App</h1>
-	<p>
-		Description: A tool that allows one to visualize the movement of the sun,
-		moon and stars accross the sky at a certain location.
-		<a href="https://github.com/smcdermott95/Sun-Moon-Stars-Animation-Astronomy-">Github page</a>
-	</p>
-	-->
-	
 	<div class="header clearfix">
 		<nav>
 			<ul class="nav nav-pills pull-right">
@@ -57,7 +48,7 @@
 	
 	<div class="jumbotron">
 		<h2>Description</h2>
-		<p class="lead">A tool that allows one to visualize the movement of the sun, moon and stars across the sky at a certain location. Last updated 6/28/17.</p>
+		<p class="lead">A tool that allows one to visualize the movement of the sun, moon, and stars across the sky at a certain location. Last updated 6/28/17.</p>
 		<p><a class="btn btn-lg btn-primary" href="https://github.com/smcdermott95/Sun-Moon-Stars-Animation-Astronomy-" role="button">Github</a></p>
 	</div>
 
@@ -65,11 +56,25 @@
 	
 	
 		<div class="col-md-4">
+		
+			<!--play box-->
+			<div class="panel panel-primary" id="playDiv">
+				<div class="panel-heading"><h3 class="panel-title" style="display:inline-block"> Animation</h3><span style="float: right" data-toggle="collapse" data-target="#animationMore"><i class="glyphicon glyphicon-chevron-down"></i></span></div>
+				<div class="panel-body">
+					<button type="button" class="btn btn-primary" id="playbutton" onclick="SMSA.playInitialize()">Play</button>
+					<input type="checkbox" id="playStart" value="beginning">Start at beginning of day?<br>
+					<div id="animationMore" class="collapse">
+						<hr>
+						Frame Rate: <input type="text" id="frameRate" size="1" value="30" onchange="SMSA.handleFrameRateChange()"> FPS<br>
+						Play Speed: 1 Second=<input type="text" id="playSpeed" size="1" value="60" onchange="SMSA.handleSpeedChange()"> minutes
+					</div>
+				</div>
+			</div>
 			
 			<!--location box-->
 			<div class="panel panel-primary">
 				<div class="panel-heading">
-					<h3 class="panel-title">Location</h3>
+					<h3 class="panel-title" style="display:inline-block">Location</h3><span style="float: right" data-toggle="collapse" data-target="#locationMore"><i class="glyphicon glyphicon-chevron-up"></i></span>
 				</div>
 				<div class="panel-body">
 					<!--Name:-->
@@ -87,66 +92,69 @@
 						</select>
 					</div>
 					
-					<div class="form-group">
-						<label>Latitude:</label><br>
-						<select id="latDeg" class="form-control myLine" onchange="SMSA.changeLocation()">
-							<script>
-							for(var i=0; i<=89;i++)
-							{
-								document.write('<option value="'+i+'">'+i+'°</option>');
-							}
-							</script>
-						</select>
-						<select id="latMin" class="form-control myLine" onchange="SMSA.changeLocation()">
-							<script>
-								for(var i=0; i<=59;i++)
-								{
-									document.write('<option value="'+i+'">'+i+'\'</option>');
-								}
-							</script>
-						</select>
-						<select id="vHemi" class="form-control myLine" onchange="SMSA.changeLocation()">
-							<option value="n">N</option>
-							<option value="s">S</option>
-						</select>
-					</div>
-
-					<div class="form-group">
-						<label>Longitude:</label><br>
-						<select id="lonDeg" class="form-control myLine" onchange="SMSA.changeLocation()">
-							<script>
-								for(var i=0; i<=179;i++)
+					
+					<div id="locationMore" class="collapse in">
+						<div class="form-group">
+							<label>Latitude:</label><br>
+							<select id="latDeg" class="form-control myLine" onchange="SMSA.changeLocation()">
+								<script>
+								for(var i=0; i<=89;i++)
 								{
 									document.write('<option value="'+i+'">'+i+'°</option>');
 								}
-							</script>
-						</select>
-						<select id="lonMin" class="form-control myLine" onchange="SMSA.changeLocation()">
-							<script>
-								for(var i=0; i<=59;i++)
-								{
-									document.write('<option value="'+i+'">'+i+'\'</option>');
-								}
-							</script>
-						</select>
-						<select id="hHemi" class="form-control myLine" onchange="SMSA.changeLocation()">
-							<option value="w">W</option>
-							<option value="e">E</option>
-						</select>
-					</div>
-					
-					<div class="form-group">
-						<label>Timezone: </label>
-						<select class="form-control myLine" onchange="SMSA.handleTimezoneChange()" id="timezone">
-							<script>
-								for(var i=-12; i<=12;i++)
-								{
-								document.write('<option value="'+i+'">'+i+'</option>');
-								}
-							</script>
-						</select>
-						+<span id="tzAdjustment">0</span>
-						<br>
+								</script>
+							</select>
+							<select id="latMin" class="form-control myLine" onchange="SMSA.changeLocation()">
+								<script>
+									for(var i=0; i<=59;i++)
+									{
+										document.write('<option value="'+i+'">'+i+'\'</option>');
+									}
+								</script>
+							</select>
+							<select id="vHemi" class="form-control myLine" onchange="SMSA.changeLocation()">
+								<option value="n">N</option>
+								<option value="s">S</option>
+							</select>
+						</div>
+
+						<div class="form-group">
+							<label>Longitude:</label><br>
+							<select id="lonDeg" class="form-control myLine" onchange="SMSA.changeLocation()">
+								<script>
+									for(var i=0; i<=179;i++)
+									{
+										document.write('<option value="'+i+'">'+i+'°</option>');
+									}
+								</script>
+							</select>
+							<select id="lonMin" class="form-control myLine" onchange="SMSA.changeLocation()">
+								<script>
+									for(var i=0; i<=59;i++)
+									{
+										document.write('<option value="'+i+'">'+i+'\'</option>');
+									}
+								</script>
+							</select>
+							<select id="hHemi" class="form-control myLine" onchange="SMSA.changeLocation()">
+								<option value="w">W</option>
+								<option value="e">E</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label>Timezone: </label>
+							<select class="form-control myLine" onchange="SMSA.handleTimezoneChange()" id="timezone">
+								<script>
+									for(var i=-12; i<=12;i++)
+									{
+									document.write('<option value="'+i+'">'+i+'</option>');
+									}
+								</script>
+							</select>
+							+<span id="tzAdjustment">0</span>
+							<br>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -154,7 +162,7 @@
 
 			<!--Date/time box-->
 			<div class="panel panel-primary" id="dateTime">
-				<div class="panel-heading"><h3 class="panel-title"> Date and Time</h3></div>
+				<div class="panel-heading"><h3 class="panel-title" style="display:inline-block"> Date and Time</h3><span style="float: right" data-toggle="collapse" data-target="#dateTimeMore"><i class="glyphicon glyphicon-chevron-down"></i></span></div>
 				<div class="panel-body">
 					<div class="form-group">
 						<label>Date:</label><br>
@@ -199,6 +207,9 @@
 							<option value="a">AM</option>
 							<option value="p">PM</option>
 						</select><br>
+					</div>
+					<div id="dateTimeMore" class="collapse">
+						<hr>
 						<div class="radio-inline">
 							<label><input type="radio" name="clockType" id="clockType12" value="12"  onclick="SMSA.updateClockType()" checked>12hr</label>
 						</div>
@@ -209,17 +220,6 @@
 					<button type="button" id="currentButton" class="btn btn-primary" onclick="SMSA.now()">Use Current Time</button>
 				</div>
 			</div>
-			
-			<div class="panel panel-primary" id="playDiv">
-				<div class="panel-heading"><h3 class="panel-title"> Animation</h3></div>
-				<div class="panel-body">
-					<button type="button" class="btn btn-primary" id="playbutton" onclick="SMSA.playInitialize()">Play</button>
-					<input type="checkbox" id="playStart" value="beginning">Start at beginning of day?<br><hr>
-					Frame Rate: <input type="text" id="frameRate" size="1" value="30" onchange="SMSA.handleFrameRateChange()"> FPS<br>
-					Play Speed: 1 Second=<input type="text" id="playSpeed" size="1" value="60" onchange="SMSA.handleSpeedChange()"> minutes
-				</div>
-			</div>
-			
 		</div>
 		
 		
@@ -235,7 +235,7 @@
 			<div class="panel panel-default">
 				<div class="panel-body row">
 					<p id="infoPanel" class="col-md-6">info panel</p>
-					<span id="mouseCoordinates" class="col-md-6"><h3>Mouse Coordinates</h3><br>Azimuth: N/A<br>Altitude: N/A</span>
+					<div id="mouseCoordinates" class="col-md-6"><h3>Mouse Coordinates</h3><br>Azimuth: N/A<br>Altitude: N/A</div>
 				</div>
 			</div>
 		</div>
@@ -261,6 +261,14 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
+	
+	<script>
+		$('.collapse').on('shown.bs.collapse', function(){
+			$(this).parent().parent().find(".glyphicon-chevron-down").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+		}).on('hidden.bs.collapse', function(){
+			$(this).parent().parent().find(".glyphicon-chevron-up").removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
+		});
+	</script>
     <p>Copyright(c) Sargent McDermott. All Rights Reserved.</p>
 </div>
 </body>

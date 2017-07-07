@@ -55,7 +55,7 @@ var SMSA = {
 	
 	
 	
-    //set the start location to new york city, NY
+	//set the start location to new york city, NY
 	tempStartLocation: function()
 	{
 		var newYork=new Location("New York City",40,43,"n",74,0,"w", -5, true);
@@ -65,8 +65,8 @@ var SMSA = {
 		this.now();   //TODO figure out why this needs to be called twice 
 	},
 	
-    //set the canvas contexts and draw the lines and degree labels on the
-    //graph canvas
+	//set the canvas contexts and draw the lines and degree labels on the
+	//graph canvas
 	initializeCanvases: function()
 	{
 		//set contexts
@@ -407,7 +407,7 @@ var SMSA = {
 				,map);
 			this.drawCanvas();
 		}
-    },
+	},
 	
 	/*
 	Called when user changes the location attributes on the input screen
@@ -492,7 +492,7 @@ var SMSA = {
 		else {
 			this.hourDropdown.value=date.hour();
 		}
-    },
+	},
 	
 	//TODO why use paramters when we can use this.oldDate?
 	/*
@@ -670,7 +670,7 @@ var SMSA = {
 		{
 			this.currentDate=this.getDate();
 		}
-    },
+	},
 
 	/*
 	Called when user changes the timezone on input screen
@@ -707,7 +707,7 @@ var SMSA = {
 	a latitude and longitude.
 	*/
 	drawMoon: function()
-    {
+	{
 		var latitude=this.currentLocation.latitude;
 		var longitude=this.currentLocation.longitude;
 		
@@ -1193,4 +1193,4 @@ var SMSA = {
 		Math.seed = (Math.seed * 9301 + 49297) % 233280;
 		var rnd = Math.seed / 233280;
 		return min + rnd * (max - min);
-    }
+	}
