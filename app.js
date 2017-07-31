@@ -28,7 +28,12 @@ var SMSA = {
 	playStartCheckbox: document.getElementById("playStart"),
 	frameRateInput:    document.getElementById("frameRate"),
 	playButton:        document.getElementById("playbutton"),
-	mouseCoordPane:    document.getElementById("mouseCoordinates"),
+	mouseAltitude:     document.getElementById("mouseAltitude"),
+	mouseAzimuth:      document.getElementById("mouseAzimuth"),
+	moonAltitudeOut:   document.getElementById("moonAltitude"),
+	moonAzimuthOut:    document.getElementById("moonAzimuth"), 
+	sunAltitudeOut:    document.getElementById("sunAltitude"),
+	sunAzimuthOut:     document.getElementById("sunAzimuth"),
 	
 	
 	starDeclination:   [89,0], //initilize array to store RNG'ed star declination position
@@ -208,47 +213,47 @@ var SMSA = {
 			azimuth=(azimuth+180)%360;
 		};
 		
-		SMSA.mouseCoordPane.innerHTML="<h3>Mouse Coordinates</h3><br>Azimuth: "+azimuth+"° E of N";
+		SMSA.mouseAltitude.innerHTML=altitude+"° above horizon";
+		SMSA.mouseAzimuth.innerHTML=azimuth+"° E of N";
 		
 		if(azimuth>=40&&azimuth<=50)
 		{
-			SMSA.mouseCoordPane.innerHTML+="(Due Northeast)";
+			SMSA.mouseAzimuth.innerHTML+="(Due Northeast)";
 		}
 		else if(azimuth>=85&&azimuth<=95)
 		{
-			SMSA.mouseCoordPane.innerHTML+="(Due East)";
+			SMSA.mouseAzimuth.innerHTML+="(Due East)";
 		}
 		else if(azimuth>=130&&azimuth<=140)
 		{
-			SMSA.mouseCoordPane.innerHTML+="(Due Southeast)";
+			SMSA.mouseAzimuth.innerHTML+="(Due Southeast)";
 		}
 		else if(azimuth>=175&&azimuth<=185)
 		{
-			SMSA.mouseCoordPane.innerHTML+="(Due South)";
+			SMSA.mouseAzimuth.innerHTML+="(Due South)";
 		}
 		else if(azimuth>=220&&azimuth<=230)
 		{
-			SMSA.mouseCoordPane.innerHTML+="(Due Southwest)";
+			SMSA.mouseAzimuth.innerHTML+="(Due Southwest)";
 		}
 		else if(azimuth>=265&&azimuth<=275)
 		{
-			SMSA.mouseCoordPane.innerHTML+="(Due West)";
+			SMSA.mouseAzimuth.innerHTML+="(Due West)";
 		}
 		else if(azimuth>=310&&azimuth<=320)
 		{
-			SMSA.mouseCoordPane.innerHTML+="(Due Northwest)";
+			SMSA.mouseAzimuth.innerHTML+="(Due Northwest)";
 		}
 		else if(azimuth>=355||azimuth<=5)
 		{
-			SMSA.mouseCoordPane.innerHTML+="(Due North)";
+			SMSA.mouseAzimuth.innerHTML+="(Due North)";
 		}
-		SMSA.mouseCoordPane.innerHTML+="<br>Altitude:   ";
-		SMSA.mouseCoordPane.innerHTML+=altitude+"° above horizon";
 	},
 	
 	handleMouseLeave: function(event)
 	{
-		SMSA.mouseCoordPane.innerHTML="<h3>Mouse Coordinates</h3><br>Azimuth: N/A<br>Altitude: N/A";
+		SMSA.mouseAltitude.innerHTML="N/A"
+		SMSA.mouseAzimuth.innerHTML="N/A";
 	},
 	
 	handleResize: function(event)
@@ -478,8 +483,15 @@ var SMSA = {
 	*/
 	updateDate: function(date)
 	{
-		this.dayDropdown.value=date.date();
+		var oldMonth=this.monthDropdown.value;
 		this.monthDropdown.value=date.month()+1;
+		
+		//check if month changed, if so then update day Dropdown by calling handleMonthChange
+		if(this.monthDropdown.value!=oldMonth)
+		{
+			SMSA.handleMonthChange();
+		}
+		this.dayDropdown.value=date.date();
 		this.yearDropdown.value=date.year();
 		this.minDropdown.value=date.minute();
 		
@@ -754,6 +766,9 @@ var SMSA = {
 		this.sunMoonStarCtx.closePath();
 	  
 		this.sunMoonStarCtx.restore();
+		
+		SMSA.moonAltitudeOut.innerHTML=moonAltitude.toFixed(3);
+		SMSA.moonAzimuthOut.innerHTML=moonAzimuth.toFixed(3);
 	},
 	
 	
@@ -996,7 +1011,7 @@ var SMSA = {
 			//otherwise update and set the date, draw canvas, and increment
 			//the counter
 			SMSA.updateDate(momentCounter);
-			SMSA.setDate(SMSA.getDate());
+			SMSA.setDate(momentCounter);
 			SMSA.drawCanvas();
 
 			momentCounter.add(playSecondInterval,"s");
@@ -1166,6 +1181,9 @@ var SMSA = {
 		{
 			drawSun(nite.calculatePositionOfSun(currentTimeAndDate));
 		}
+		
+		SMSA.sunAltitudeOut.innerHTML=sunAltitude.toFixed(3);
+		SMSA.sunAzimuthOut.innerHTML=sunAzimuth.toFixed(3);
 	}
 };
 
