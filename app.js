@@ -710,7 +710,13 @@ var SMSA = {
 	*/
 	handleSpeedChange: function()
 	{
-		this.playSpeed=document.getElementById("playSpeed").value*60;
+		var dropdown = document.getElementById("speedUnit");
+		this.playSpeed=document.getElementById("playSpeed").value;
+		
+		if(dropdown.options[dropdown.selectedIndex].value=="m")
+		{
+			this.playSpeed*=60;
+		}
 	},
 
 

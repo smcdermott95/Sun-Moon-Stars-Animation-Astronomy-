@@ -60,14 +60,34 @@ function placeMarkerAndPanTo(latLng, map) {
 		if(response.timeZoneId != null){
 			tz=response.rawOffset/3600;
 			dst=response.dstOffset/3600;
+			
+			//initialize array for location coords [latitude Degrees, latitude Minutes, longitude Degrees, longitude Minutes]
+			var coords=new Array(4);
+			
+			coords[0]=Math.floor(Math.abs(latLng.lat()));
+			coords[1]=Math.round(Math.abs(latLng.lat()%1*60));
+			
+			//if minutes rounded up to 60, reset it to 0 and increment degrees.
+			if(coords[1]==60)
+			{
+				coords[1]=0;
+				coords[0]++;
+			}
+			
+			
+			coords[2]=Math.floor(Math.abs(latLng.lng()));
+			coords[3]=Math.round(Math.abs(latLng.lng()%1*60));
+			
+			//if minutes rounded up to 60, reset it to 0 and increment degrees.
+			if(coords[3]==60)
+			{
+				coords[3]=0;
+				coords[2]++;
+			}
+			
 					
-			var l = new Location("custom",Math.floor(Math.abs(latLng.lat())),
-				Math.floor(Math.abs(latLng.lat()%1*60)),
-				(latLng.lat()>=0)? "n":"s",
-				Math.floor(Math.abs(latLng.lng())),
-				Math.floor(Math.abs(latLng.lng()%1*60)),
-				(latLng.lng()>=0)? "e":"w",
-			tz,dst);
+			var l = new Location("custom",coords[0],coords[1],(latLng.lat()>=0)? "n":"s",
+				coords[2],coords[3],(latLng.lng()>=0)? "e":"w",tz,dst);
 			SMSA.oldDate=SMSA.getDate();
 			SMSA.updateLocation(l);
 			SMSA.setLocation(l);

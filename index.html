@@ -66,7 +66,11 @@
 					<div id="animationMore" class="collapse">
 						<hr>
 						Frame Rate: <input type="text" id="frameRate" size="1" value="30" onchange="SMSA.handleFrameRateChange()"> FPS<br>
-						Play Speed: 1 Second=<input type="text" id="playSpeed" size="1" value="60" onchange="SMSA.handleSpeedChange()"> minutes
+						Play Speed: 1 sec=<input type="text" id="playSpeed" size="1" value="60" onchange="SMSA.handleSpeedChange()"> 
+						<select id="speedUnit" onchange="SMSA.handleSpeedChange()">
+							<option value="m">min</option>
+							<option value="s">sec</option>
+						</select>
 					</div>
 				</div>
 			</div>
