@@ -7,7 +7,7 @@ Inspiration
           Site: http://www.jgiesen.de/SME/
 #####################################################################
 
-Libraries
+Libraries/API
     1) moment.js  
             Author: JS Foundation and other contributers
             Site: momentjs.com
@@ -17,6 +17,16 @@ Libraries
             Author: Vladimir Agafonkin
             Site: https://github.com/mourner/suncalc
             Uses: used to get the position of the sun and moon
+    3) nite-overlay
+            Author: rossengeorgiev
+            Site: https://github.com/rossengeorgiev/nite-overlay
+            Uses: used to draw shadow of earth/night area 
+    4) Google Maps API
+            Author: Google
+            Site: https://developers.google.com/maps/
+    5) Google Timezone API
+            Author: Google
+            Site: https://developers.google.com/maps/documentation/timezone/intro
 #####################################################################
 Other
     1) Seeded Random Number Generator

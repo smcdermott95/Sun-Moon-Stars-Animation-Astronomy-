@@ -10,4 +10,4 @@ Goals(somehwat in order of importance)<br>
   -more commenting and cleanup<br>
   -improve UI<br>
   -improve efficiency<br>
-  
+  -Clicking on the map to change locations has been disabled because of time conversion issues, re-enable and fix bug<br>
