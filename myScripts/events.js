@@ -309,7 +309,7 @@ SMSA.events = {
 		SMSA.viewUI.mouseAltitude.innerHTML=altitude+"° above horizon";
 		SMSA.viewUI.mouseAzimuth.innerHTML=azimuth+"° E of N";
 
-		var direction;
+		var direction="";
 		if(azimuth>=40&&azimuth<=50)
 		{
 			direction="(Due Northeast)";
