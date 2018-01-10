@@ -1,27 +1,27 @@
 var SMSA= { };
 SMSA.model = {
 	//bottom layer canvas
-	c1:                document.getElementById("skyCanvas"), //get canvas	
+	c1:                document.getElementById("skyCanvas"), //get canvas
 	numberOfStars:     120,
 	starDeclination:   [89,0], //initilize array to store RNG'ed star declination position
 	hourDisplacement:  [6,2],  //initilize array to store RNG'ed star hour positions
 	crosshairPos:      {x:0, y:0},  //position of crosshair
 	oldDate:           moment("0000", "YYYY"),  //the previous date before a date is changed
 	currentDate:       moment("0000", "YYYY"),  //the date after a date is changed
-	tzAdjustment:      0,         //offset used account for DST  
+	tzAdjustment:      0,         //offset used account for DST
 	oldLocation:       null,            //the previous location before it is changed
 	currentLocation:   new Location(),  //the location after it is changed
 	isLocationUpdated: "undefined",
 	currentDeclination: "undefined",    //declination of the sun
-	
-	
+
+
 	init: function () {
 		this.initializeStarsArrays();
 		SMSA.viewCanvas.initializeCanvases();
 		this.tempStartLocation();
 	},
-	
-	
+
+
 	//set the start location to new york city, NY
 	tempStartLocation: function()
 	{
@@ -29,9 +29,9 @@ SMSA.model = {
 		SMSA.viewUI.updateLocation(newYork);
 		this.setLocation(newYork);
 		SMSA.events.now();
-		SMSA.events.now();   //TODO figure out why this needs to be called twice 
+		//SMSA.events.now();   //TODO figure out why this needs to be called twice
 	},
-	
+
 	/*
 	Set the current location to a location
 	*/
@@ -41,7 +41,7 @@ SMSA.model = {
 		this.currentLocation=location;
 		this.isLocationUpdated=false;
 	},
-	
+
 	/*
 	Set the current date to a date
 	*/
@@ -49,12 +49,12 @@ SMSA.model = {
 	{
 		this.oldDate=this.currentDate;
 		this.currentDate=date;
-	
+
 		if(!this.currentDate.isValid()||this.oldDate.month()!=this.currentDate.month())
 		{
 			SMSA.viewUI.updateDayDropdown();
 		}
-	
+
 		if(mapReady)
 		{
 			//nite.init(map);
@@ -63,7 +63,7 @@ SMSA.model = {
 		}
 	},
 
-	
+
 	//TODO why use paramters when we can use this.oldDate?
 	/*
 	Calculate old date and timezone to currentTimezone
@@ -74,7 +74,7 @@ SMSA.model = {
 		var newDate=date.clone().utcOffset(this.currentLocation.timezone+this.tzAdjustment);
 		return newDate;
 	},
-	
+
 	/*
 	Calculate and set the timezone using the current location
 	*/
@@ -85,19 +85,19 @@ SMSA.model = {
 			&&this.currentLocation.observeDST)
 		{
 			this.tzAdjustment=1;
-			
+
 			//updateTzAdjustment
 			document.getElementById("tzAdjustment").innerHTML="1";
 		}
 		else
 		{
 			this.tzAdjustment=0;
-			
+
 			//updateTzAdjustment
 			document.getElementById("tzAdjustment").innerHTML="0";
 		}
 	},
-	
+
 
 	/*
 	This function pushes random values of declination and hour displacements

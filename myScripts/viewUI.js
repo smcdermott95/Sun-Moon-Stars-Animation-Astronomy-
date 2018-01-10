@@ -21,10 +21,10 @@ SMSA.viewUI = {
 	mouseAltitude:     document.getElementById("mouseAltitude"),
 	mouseAzimuth:      document.getElementById("mouseAzimuth"),
 	moonAltitudeOut:   document.getElementById("moonAltitude"),
-	moonAzimuthOut:    document.getElementById("moonAzimuth"), 
+	moonAzimuthOut:    document.getElementById("moonAzimuth"),
 	sunAltitudeOut:    document.getElementById("sunAltitude"),
 	sunAzimuthOut:     document.getElementById("sunAzimuth"),
-	
+
 	/*
 	Get the selected location on the screen and return a location object
 	*/
@@ -44,7 +44,7 @@ SMSA.viewUI = {
 		var location=new Location(name,latDeg, latMin,vHemi,lonDeg,lonMin,hHemi,timezone,observeDST);
 		return location;
 	},
-	
+
 	/*
 	Get the selected date on the input screen and return it as a moment
 	*/
@@ -56,7 +56,7 @@ SMSA.viewUI = {
 		var hour=this.hourDropdown.value;
 		var min=this.minDropdown.value;
 		var ampm=this.ampmDropdown.value;
-	
+
 		var date;
 		if(this.getClockType()=="12")
 		{
@@ -68,10 +68,10 @@ SMSA.viewUI = {
 		}
 
 		date.utcOffset(parseInt(SMSA.model.currentLocation.timezone+SMSA.model.tzAdjustment), true);
-		
+
 		return date;
 	},
-	
+
 	//This function will determine which radio button for clock
 	//type (12 or 24) is checked and return
 	getClockType: function()
@@ -85,7 +85,7 @@ SMSA.viewUI = {
 			return "24";
 		}
 	},
-	
+
 	/*
 	Set the location on the input screen to a location object
 	*/
@@ -100,7 +100,7 @@ SMSA.viewUI = {
 		this.hHemiDropdown.value=location.hemisphereEW;
 		this.tzDropdown.value=location.timezone;
 	},
-	
+
 	/*
 	Set the date selected on the input screen to a moment
 	*/
@@ -108,17 +108,18 @@ SMSA.viewUI = {
 	{
 		var oldMonth=this.monthDropdown.value;
 		this.monthDropdown.value=date.month()+1;
-		
-		//check if month changed, if so then update day Dropdown by calling handleMonthChange
-		if(this.monthDropdown.value!=oldMonth)
+
+		//check if month changed, or the month drop down is not initialized
+		//if either is true, then update day Dropdown by calling handleMonthChange
+		if(this.monthDropdown.value!=oldMonth||this.dayDropdown.options.length==0)
 		{
 			this.updateDayDropdown();
 		}
 		this.dayDropdown.value=date.date();
 		this.yearDropdown.value=date.year();
 		this.minDropdown.value=date.minute();
-		
-		
+
+
 		if(this.getClockType()=="12")
 		{
 			this.hourDropdown.value=date.clone().format("h");
@@ -128,8 +129,8 @@ SMSA.viewUI = {
 			this.hourDropdown.value=date.hour();
 		}
 	},
-	
-	
+
+
 	/*
 	This function will update the day selection options (0-31) if the user
 	changes the month selection.
@@ -138,7 +139,7 @@ SMSA.viewUI = {
 	{
 		var day=this.dayDropdown.value;
 		var daysInMonth=moment(this.monthDropdown.value,"M").daysInMonth();
-		
+
 		//delete options from day selection box
 		for(var i=this.dayDropdown.length; i>=0; i--)
 		{
@@ -155,7 +156,7 @@ SMSA.viewUI = {
 			option.text =i;
 			this.dayDropdown.add(option);
 		}
-		
+
 		//if the date is greater than the number of days
 		//in updated month then set the day to the highest date in month
 		if(day>daysInMonth)
@@ -166,13 +167,13 @@ SMSA.viewUI = {
 		{
 			this.dayDropdown.value=day;
 		}
-		
+
 		if(!SMSA.model.currentDate.isValid())
 		{
 			SMSA.model.currentDate=this.getDate();
 		}
 	},
-	
+
 	disableButtons(){
 			//set play/stop button from "Play" to "Stop" and disable input selections
 			this.playButton.innerHTML="Stop";
@@ -188,7 +189,7 @@ SMSA.viewUI = {
 			this.playStartCheckbox.disabled=true;
 			this.frameRateInput.disabled=true;
 	},
-	
+
 	enableButtons() {
 			//set play/stop button from "Stop" to "Play" and enable input selections
 			this.playButton.innerHTML="Play";
@@ -204,5 +205,5 @@ SMSA.viewUI = {
 			this.frameRateInput.disabled=false;
 			this.currentButton.disabled=false;
 	}
-	
+
 };
