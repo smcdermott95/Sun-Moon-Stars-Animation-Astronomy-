@@ -1,0 +1,26 @@
+<div>
+  <select  [(ngModel)]="locationService.latDeg" (ngModelChange)="locationService.setLatDeg($event)">
+    <option *ngFor="let degree of verticalDegrees" [value]="degree">{{degree | date1 }}</option>
+  </select>
+  <select  [(ngModel)]="locationService.latMin" (ngModelChange)="locationService.setLatMin($event)">
+    <option *ngFor="let minute of minutes" [value]="minute">{{minute | date1 }}</option>
+  </select>
+  <select [(ngModel)]="locationService.isNorthHemi" (ngModelChange)="locationService.setVerticalHemi($event)">
+    <option [ngValue]="true">N</option>
+    <option [ngValue]="false">S</option>
+  </select>
+  <select  [(ngModel)]="locationService.lonDeg" (ngModelChange)="locationService.setLonDeg($event)">
+    <option *ngFor="let degree of horizontalDegrees" [value]="degree">{{degree | date1 }}</option>
+  </select>
+  <select  [(ngModel)]="locationService.lonMin" (ngModelChange)="locationService.setLonMin($event)">
+    <option *ngFor="let minute of minutes" [value]="minute">{{minute | date1 }}</option>
+  </select>
+  <select [(ngModel)]="locationService.isEastHemi" (ngModelChange)="locationService.setHorizontalHemi($event)">
+    <option [ngValue]="false">W</option>
+    <option [ngValue]="true">E</option>
+  </select>
+</div>
+
+<div>
+  <span>{{ locationService.lat }}, {{ locationService.lon }}</span>
+</div>
