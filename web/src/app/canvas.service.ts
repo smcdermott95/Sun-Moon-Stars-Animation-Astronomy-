@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DateTimeService } from './date-time.service';
 import { LocationService } from './location.service';
+import { CanvasColor } from './canvas-color';
 var SunCalc = require('suncalc');
 import * as moment from 'moment';
 
@@ -44,7 +45,7 @@ export class CanvasService {
 	private lastDrawnLocation: { lat: number, lon: number};
 	private lastDrawnSkyColorType: number;
 
-	constructor( private locationService: LocationService, private dateTimeService: DateTimeService) {
+	constructor( private locationService: LocationService, private dateTimeService: DateTimeService, private canvasColors: CanvasColor) {
 		console.log(this);
 	}
 
@@ -101,7 +102,7 @@ export class CanvasService {
 			this.graphCtx.beginPath();
 			this.graphCtx.moveTo(0,this.yCoord(i));
 			this.graphCtx.lineTo(this.xCoord(360),this.yCoord(i));
-			this.graphCtx.strokeStyle = '#555555';
+			this.graphCtx.strokeStyle = this.canvasColors.grid.LINE_GRAY;
 			this.graphCtx.stroke();
 			this.graphCtx.closePath();
 		}
@@ -110,7 +111,7 @@ export class CanvasService {
 		this.graphCtx.beginPath();
 		this.graphCtx.moveTo(this.xCoord(180),this.yCoord(0));
 		this.graphCtx.lineTo(this.xCoord(180),this.yCoord(90));
-		this.graphCtx.strokeStyle = '#800000';
+		this.graphCtx.strokeStyle = this.canvasColors.grid.LINE_RED;
 		this.graphCtx.stroke();
 		this.graphCtx.closePath();
 	
@@ -119,32 +120,32 @@ export class CanvasService {
 			this.graphCtx.beginPath();
 			this.graphCtx.moveTo(this.xCoord(i),this.yCoord(0));
 			this.graphCtx.lineTo(this.xCoord(i),this.yCoord(90));
-			this.graphCtx.strokeStyle = '#555555';
+			this.graphCtx.strokeStyle = this.canvasColors.grid.LINE_GRAY;
 			this.graphCtx.stroke();
 			this.graphCtx.closePath();
 		}
 	
 		//draw -6 to 0 degree altitude twilight box
 		this.graphCtx.beginPath();
-		this.graphCtx.fillStyle ='#0099cc';
+		this.graphCtx.fillStyle = this.canvasColors.grid.TWILIGHT_CIVIL;
 		this.graphCtx.fillRect(this.xCoord(0),this.yCoord(-6),this.xCoord(360),-6*this.skyCanvas.height/120);
 		this.graphCtx.closePath();
 	
 		//draw -12 to -6 degree altitude twilight box
 		this.graphCtx.beginPath();
-		this.graphCtx.fillStyle ='#003366';
+		this.graphCtx.fillStyle = this.canvasColors.grid.TWILIGHT_NAUTICAL;
 		this.graphCtx.fillRect(this.xCoord(0),this.yCoord(-12),this.xCoord(360),-6*this.skyCanvas.height/120);
 		this.graphCtx.closePath();
 	
 		//draw -18 to -12 degree altitude twilight box
 		this.graphCtx.beginPath();
-		this.graphCtx.fillStyle ='#0e2f44';
+		this.graphCtx.fillStyle = this.canvasColors.grid.TWILIGHT_ASTRONOMICAL;
 		this.graphCtx.fillRect(this.xCoord(0),this.yCoord(-18),this.xCoord(360),-6*this.skyCanvas.height/120);
 		this.graphCtx.closePath();
 	
 		//draw -30 to -18 degree altitude night box
 		this.graphCtx.beginPath();
-		this.graphCtx.fillStyle ='#222222';
+		this.graphCtx.fillStyle = this.canvasColors.grid.NIGHT;
 		this.graphCtx.fillRect(this.xCoord(0),this.yCoord(-30),this.xCoord(360),-12*this.skyCanvas.height/120);
 		this.graphCtx.closePath();
 	
@@ -152,7 +153,7 @@ export class CanvasService {
 		this.graphCtx.beginPath();
 		this.graphCtx.moveTo(0,this.yCoord(0));
 		this.graphCtx.lineTo(this.xCoord(360),this.yCoord(0));
-		this.graphCtx.strokeStyle = '#800000';
+		this.graphCtx.strokeStyle = this.canvasColors.grid.LINE_RED;
 		this.graphCtx.stroke();
 		this.graphCtx.closePath();
 
@@ -161,14 +162,14 @@ export class CanvasService {
 			this.graphCtx.beginPath();
 			this.graphCtx.moveTo(0,this.yCoord(i));
 			this.graphCtx.lineTo(this.xCoord(360),this.yCoord(i));
-			this.graphCtx.strokeStyle = '#800000';
+			this.graphCtx.strokeStyle = this.canvasColors.grid.LINE_RED;
 			this.graphCtx.stroke();
 			this.graphCtx.closePath();
 		}
 	
 		//draw border
 		this.graphCtx.beginPath();
-		this.graphCtx.strokeStyle = '#800000';
+		this.graphCtx.strokeStyle = this.canvasColors.grid.LINE_GRAY;
 		this.graphCtx.strokeRect(0, 0, this.skyCanvas.width, this.skyCanvas.height);
 		this.graphCtx.closePath();
 	}
@@ -197,23 +198,23 @@ export class CanvasService {
 		//using the sun's altitude. set the skyColorType
 		if(sunAltitude<-18) {
 			color1="black";
-			color2="#301860";
+			color2=this.canvasColors.sky.NIGHT_PURPLE;
 			skyColorType = SkyColorType.NIGHT;
 		} else if(sunAltitude<-12) {
-			color1="#301860";
-			color2="#00344d";
+			color1=this.canvasColors.sky.NIGHT_PURPLE;
+			color2=this.canvasColors.sky.NIGHT_DARK_BLUE;
 			skyColorType = SkyColorType.ASTRONOMICAL;
 		} else if(sunAltitude<-6) {
-			color1="#00344d";
-			color2="#006999";
+			color1=this.canvasColors.sky.NIGHT_DARK_BLUE;
+			color2=this.canvasColors.sky.NIGHT_MEDIUM_BLUE;
 			skyColorType = SkyColorType.NAUTICAL;
 		} else if(sunAltitude<0) {
-			color1="#006999";
-			color2="#4dc6ff";
+			color1=this.canvasColors.sky.NIGHT_MEDIUM_BLUE;
+			color2=this.canvasColors.sky.NIGHT_LIGHT_BLUE;
 			skyColorType = SkyColorType.CIVIL;
 		} else {
-			color1="#9adfff";
-			color2="#e6f7ff";
+			color1=this.canvasColors.sky.DAY_BLUE;
+			color2=this.canvasColors.sky.DAY_LIGHT_BLUE;
 			skyColorType = SkyColorType.DAY;
 		}
 
@@ -245,8 +246,8 @@ export class CanvasService {
 		//if the date has changed, the timezone has changed,
 		//or the location has changed
 		if(
-			!this.lastDrawnDate ||
-			!this.lastDrawnLocation || 
+			!this.lastDrawnDate || /* never drawn */
+			!this.lastDrawnLocation ||  /* never drawn */
 			!this.dateTimeService.dateTime.isSame(this.lastDrawnDate, "date") || /* changed date*/
 			this.dateTimeService.dateTime.utcOffset() != this.lastDrawnDate.utcOffset() || /* changed timezone */
 			this.locationService.getLat() != this.lastDrawnLocation.lat || /* changed lattitude */
@@ -298,7 +299,7 @@ export class CanvasService {
 		//draw sun
 		this.sunMoonStarCtx.beginPath();
 		this.sunMoonStarCtx.arc(this.xCoord(sunAzimuth),this.yCoord(sunAltitude),10,0,2*Math.PI);
-		this.sunMoonStarCtx.strokeStyle = '#990000';
+		this.sunMoonStarCtx.strokeStyle = this.canvasColors.grid.LINE_RED; //border
 		this.sunMoonStarCtx.stroke();
 		this.sunMoonStarCtx.fillStyle = sunColor;
 		this.sunMoonStarCtx.fill();
@@ -375,7 +376,7 @@ export class CanvasService {
 			//draw the red circle/dots
 			this.sunPointsCtx.beginPath();
 			this.sunPointsCtx.arc(this.xCoord(sunHourAzimuth),this.yCoord(sunHourAltitude),3,0,2*Math.PI);
-			this.sunPointsCtx.strokeStyle = '#990000';
+			this.sunPointsCtx.strokeStyle = this.canvasColors.grid.LINE_RED;
 			this.sunPointsCtx.stroke();
 			this.sunPointsCtx.closePath();
 
@@ -541,7 +542,7 @@ export class CanvasService {
 			let blue: number =Math.round((153-0)*Math.pow(sunAltitude/90,.25)+0);
 			color = "#"+red.toString(16)+green.toString(16)+"00";
 		} else {
-			color="#ff6600";
+			color= this.canvasColors.SUN_BELOW_HORIZON;
 		}
 		return color;
 	}
