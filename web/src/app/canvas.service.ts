@@ -4,48 +4,67 @@ import { LocationService } from './location.service';
 var SunCalc = require('suncalc');
 import * as moment from 'moment';
 
+
+//TODO - add the other properties
+export interface ISunCalc {
+	altitude: number;
+	azimuth: number;
+}
+
+enum SkyColorType {
+	NIGHT,
+	ASTRONOMICAL,
+	NAUTICAL,
+	CIVIL,
+	DAY
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CanvasService {
-  private canvasesEle: Element;
-  private skyCanvas: HTMLCanvasElement;
-  private graphCanvas: HTMLCanvasElement;
-  private sunPointsCanvas: HTMLCanvasElement;
-  private sunMoonStarCanvas: HTMLCanvasElement;
-  private skyCtx: CanvasRenderingContext2D;
-  private graphCtx: CanvasRenderingContext2D;
-  private sunPointsCtx: CanvasRenderingContext2D;
-  private sunMoonStarCtx: CanvasRenderingContext2D;
+	private canvasesEle: Element;
+	private skyCanvas: HTMLCanvasElement;
+	private graphCanvas: HTMLCanvasElement;
+	private sunPointsCanvas: HTMLCanvasElement;
+	private sunMoonStarCanvas: HTMLCanvasElement;
+	private skyCtx: CanvasRenderingContext2D;
+	private graphCtx: CanvasRenderingContext2D;
+	private sunPointsCtx: CanvasRenderingContext2D;
+	private sunMoonStarCtx: CanvasRenderingContext2D;
 
-  private textColor: string;
+  	private textColor: string;
 	private numberOfStars = 120;
 	private starDeclination = [89,0]; //initilize array to store RNG'ed star declination position
 	private hourDisplacement =  [6,2];  //initilize array to store RNG'ed star hour positions
 
-  private lastDrawnDate: moment.Moment;
-  private lastDrawnLocation: { lat: number, lon: number};
-  private currentDeclination: number;
+	private currentDeclination: number;
 
-  constructor( private locationService: LocationService, private dateTimeService: DateTimeService) {
-    console.log(this);
-  }
+	private lastDrawnDate: moment.Moment;
+	private lastDrawnLocation: { lat: number, lon: number};
+	private lastDrawnSkyColorType: number;
 
-  public setCanvas(element: Element) {
-    this.canvasesEle = element;
-    this.skyCanvas = this.canvasesEle.children[0] as HTMLCanvasElement;
-    this.graphCanvas = this.canvasesEle.children[1] as HTMLCanvasElement;
-    this.sunPointsCanvas = this.canvasesEle.children[2] as HTMLCanvasElement;
-    this.sunMoonStarCanvas = this.canvasesEle.children[3] as HTMLCanvasElement;
-  }
+	constructor( private locationService: LocationService, private dateTimeService: DateTimeService) {
+		console.log(this);
+	}
 
-  public init() {
-    this.initializeCanvases();
-    this.initializeGraph();
-    this.initializeStarsArrays();
-  }
+	public setCanvas(element: Element): void {
+		this.canvasesEle = element;
+		this.skyCanvas = this.canvasesEle.children[0] as HTMLCanvasElement;
+		this.graphCanvas = this.canvasesEle.children[1] as HTMLCanvasElement;
+		this.sunPointsCanvas = this.canvasesEle.children[2] as HTMLCanvasElement;
+		this.sunMoonStarCanvas = this.canvasesEle.children[3] as HTMLCanvasElement;
+	}
 
-  //set the canvas contexts and draw the lines and degree labels on the
+	public init(): void {
+		this.dateTimeService.setCanvasService(this);
+		this.locationService.setCanvasService(this);
+		this.initializeCanvases();
+		this.initializeGraph();
+		this.initializeStarsArrays();
+	}
+
+	//set the canvas contexts and draw the lines and degree labels on the
 	//graph canvas
 	private initializeCanvases() {
 		//set contexts
@@ -54,7 +73,7 @@ export class CanvasService {
 		this.sunPointsCtx = this.sunPointsCanvas.getContext("2d");
 		this.sunMoonStarCtx = this.sunMoonStarCanvas.getContext("2d");
 		
-		//size canvases to fit parent div
+	//size canvases to fit parent div
     //var w=document.getElementById("rightPane").offsetWidth-30;
     let w: number = this.canvasesEle.clientWidth;
 		this.skyCanvas.width=w;
@@ -74,16 +93,14 @@ export class CanvasService {
 		//this.c4.addEventListener("mousemove",SMSA.events.handleMouseMove);
 		//this.c4.addEventListener("mouseleave",SMSA.events.handleMouseLeave);
 		//window.addEventListener("resize", SMSA.events.handleResize);          //TODO remove from artist class?
-  }
+	}
   
-  private initializeGraph()
-	{
+  	private initializeGraph(): void {
 		//draw 10-80 degree altitude lines, in 10 degree increments
-		for(var count=10; count<=80; count=count+10)
-		{
+		for(let i: number = 10; i<=80; i+=10) {
 			this.graphCtx.beginPath();
-			this.graphCtx.moveTo(0,this.yCoord(count));
-			this.graphCtx.lineTo(this.xCoord(360),this.yCoord(count));
+			this.graphCtx.moveTo(0,this.yCoord(i));
+			this.graphCtx.lineTo(this.xCoord(360),this.yCoord(i));
 			this.graphCtx.strokeStyle = '#555555';
 			this.graphCtx.stroke();
 			this.graphCtx.closePath();
@@ -98,8 +115,7 @@ export class CanvasService {
 		this.graphCtx.closePath();
 	
 		//draw 90 and 270 degree azimuth line
-		for(var i=90; i<=270; i+=180)
-		{
+		for(let i: number =90; i<=270; i+=180) {
 			this.graphCtx.beginPath();
 			this.graphCtx.moveTo(this.xCoord(i),this.yCoord(0));
 			this.graphCtx.lineTo(this.xCoord(i),this.yCoord(90));
@@ -141,11 +157,10 @@ export class CanvasService {
 		this.graphCtx.closePath();
 
 		//draw -18 to -6 degree altitude lines, in 6 degree increments
-		for(var count=-18; count<=-6; count=count+6)
-		{
+		for(let i: number=-18; i<=-6; i+=6) {
 			this.graphCtx.beginPath();
-			this.graphCtx.moveTo(0,this.yCoord(count));
-			this.graphCtx.lineTo(this.xCoord(360),this.yCoord(count));
+			this.graphCtx.moveTo(0,this.yCoord(i));
+			this.graphCtx.lineTo(this.xCoord(360),this.yCoord(i));
 			this.graphCtx.strokeStyle = '#800000';
 			this.graphCtx.stroke();
 			this.graphCtx.closePath();
@@ -158,57 +173,48 @@ export class CanvasService {
 		this.graphCtx.closePath();
 	}
 
-	public drawCanvas() { //TODO - pass to parameter what was changed(lat, lon,...date) ???
+	public drawCanvas(): void {
 		//grab the location and date
 		let latitude: number = this.locationService.getLat();
 		let longitude: number = this.locationService.getLon();
 
 		//clone current date moment into JS date time
-    let currentTimeAndDate: Date = this.dateTimeService.dateTime.clone().toDate();
+		let currentTimeAndDate: Date = this.dateTimeService.dateTime.clone().toDate();
 
 		//Calculate Current sun position
-    var currentSunPos = SunCalc.getPosition(currentTimeAndDate, latitude, longitude);
-		var sunAltitude=currentSunPos.altitude*180/Math.PI;
-		var sunAzimuth=currentSunPos.azimuth*180/Math.PI+180;
+    	let currentSunPos: ISunCalc = SunCalc.getPosition(currentTimeAndDate, latitude, longitude);
+		let sunAltitude: number = currentSunPos.altitude*180/Math.PI;
+		let sunAzimuth: number = currentSunPos.azimuth*180/Math.PI+180;
 
 		//initialize color and gradient vars
 		this.skyCtx.beginPath();
 		var color1="";
 		var color2="";
-		let skyColorType: string;
-		var grad=this.skyCtx.createLinearGradient(this.xCoord(0),this.yCoord(90),this.xCoord(0),this.yCoord(0));
+		let skyColorType: number;
+		let grad: CanvasGradient = this.skyCtx.createLinearGradient(this.xCoord(0),this.yCoord(90),this.xCoord(0),this.yCoord(0));
 
 		//calculate the 2 sky colors(top and bottom) for the sky gradient
 		//using the sun's altitude. set the skyColorType
-		if(sunAltitude<-18)
-		{
+		if(sunAltitude<-18) {
 			color1="black";
 			color2="#301860";
-			skyColorType="night";
-		}
-		else if(sunAltitude<-12)
-		{
+			skyColorType = SkyColorType.NIGHT;
+		} else if(sunAltitude<-12) {
 			color1="#301860";
 			color2="#00344d";
-			skyColorType="astronomical";
-		}
-		else if(sunAltitude<-6)
-		{
+			skyColorType = SkyColorType.ASTRONOMICAL;
+		} else if(sunAltitude<-6) {
 			color1="#00344d";
 			color2="#006999";
-			skyColorType="nautical";
-		}
-		else if(sunAltitude<0)
-		{
+			skyColorType = SkyColorType.NAUTICAL;
+		} else if(sunAltitude<0) {
 			color1="#006999";
 			color2="#4dc6ff";
-			skyColorType="civil";
-		}
-		else
-		{
+			skyColorType = SkyColorType.CIVIL;
+		} else {
 			color1="#9adfff";
 			color2="#e6f7ff";
-			skyColorType="day";
+			skyColorType = SkyColorType.DAY;
 		}
 
 		//add colors to gradient
@@ -217,22 +223,20 @@ export class CanvasService {
 		this.skyCtx.fillStyle = grad;
 
 		// //necessary to prevent redundancy of redrawing of skies with same sky colors
-    // if(skyColorType != this.currentSkyColorType)
-    if(true)
-		{
+		if(skyColorType != this.lastDrawnSkyColorType) {
 			//clear skyCanvas
 			this.skyCtx.clearRect(0,0, this.skyCanvas.width, this.skyCanvas.height);
 
-			//this.currentSkyColorType = skyColorType;
+			this.lastDrawnSkyColorType = skyColorType;
 
 			//change text color and draw the sky.
-			this.textColor=(skyColorType=="day" ? "black" : "white");
+			this.textColor = (skyColorType == SkyColorType.DAY ? "black" : "white");
 			//this.crosshairColor=(skyColorType=="day" ? "#006400" : '#39FF14')
 			this.skyCtx.fillRect(this.xCoord(0),this.yCoord(0),this.xCoord(360),-90*this.skyCanvas.height/120);
 			this.skyCtx.closePath();
 			
 			this.plotSunPoints();
-    }
+		}
     
 		//clear sunMoonStarCanvas
 		this.sunMoonStarCtx.clearRect(0,0, this.sunMoonStarCanvas.width, this.sunMoonStarCanvas.height);
@@ -241,15 +245,13 @@ export class CanvasService {
 		//if the date has changed, the timezone has changed,
 		//or the location has changed
 		if(
-      !this.lastDrawnDate ||
-      !this.lastDrawnLocation ||
-      !this.dateTimeService.dateTime.isSame(this.lastDrawnDate, "date") ||
-      this.dateTimeService.dateTime.utcOffset() != this.lastDrawnDate.utcOffset() ||
-      //(!SMSA.model.currentLocation.isSame(this.lastDrawnDate)&&SMSA.model.isLocationUpdated==false)
-      this.locationService.getLat() != this.lastDrawnLocation.lat ||
-      this.locationService.getLon() != this.lastDrawnLocation.lon
-      )
-		{
+			!this.lastDrawnDate ||
+			!this.lastDrawnLocation || 
+			!this.dateTimeService.dateTime.isSame(this.lastDrawnDate, "date") || /* changed date*/
+			this.dateTimeService.dateTime.utcOffset() != this.lastDrawnDate.utcOffset() || /* changed timezone */
+			this.locationService.getLat() != this.lastDrawnLocation.lat || /* changed lattitude */
+			this.locationService.getLon() != this.lastDrawnLocation.lon /* changed longitude */
+		) {
 			//calculate a new declination
 			this.currentDeclination=SunCalc.getPosition(/*Date*/ currentTimeAndDate, 90, 0).altitude*180/Math.PI;
 			
@@ -286,13 +288,12 @@ export class CanvasService {
 		}
 
 		//adjust azimuth for southern hemisphere and, if needed, the lower northern hemisphere
-		if(latitude<this.currentDeclination)
-		{
+		if(latitude<this.currentDeclination) {
 			sunAzimuth=(sunAzimuth+180)%360;
 		}
 
 		//get sun color
-		var sunColor=this.gradientFunction(sunAltitude);
+		let sunColor: string = this.gradientFunction(sunAltitude);
 
 		//draw sun
 		this.sunMoonStarCtx.beginPath();
@@ -304,8 +305,7 @@ export class CanvasService {
 		this.sunMoonStarCtx.closePath();
 
 		//if the sun altitude is below 6 degrees of horizon, call draw stars
-		if(sunAltitude<-6)
-		{
+		if(sunAltitude<-6) {
 			this.drawStars();
 		}
 
@@ -330,47 +330,45 @@ export class CanvasService {
 		// }
 		
 		// SMSA.viewUI.sunAltitudeOut.innerHTML=sunAltitude.toFixed(3);
-    // SMSA.viewUI.sunAzimuthOut.innerHTML=sunAzimuth.toFixed(3);
+    	// SMSA.viewUI.sunAzimuthOut.innerHTML=sunAzimuth.toFixed(3);
     
-    this.lastDrawnDate = this.dateTimeService.dateTime.clone();
-    this.lastDrawnLocation = { lat: this.locationService.getLat(), lon: this.locationService.getLon() };
-  }
+    	this.lastDrawnDate = this.dateTimeService.dateTime.clone();
+    	this.lastDrawnLocation = { lat: this.locationService.getLat(), lon: this.locationService.getLon() };
+	}
 
   	/*
 	This function calculates and plots red dots/circles for every hour (0-23)
 	indicating where the sun is at the beginning of each hour HH:00
 	*/
-	private plotSunPoints() {
+	private plotSunPoints(): void {
 		//A moment counter that will be incremented every hour
-    var momentCounter=moment(this.dateTimeService.dateTime.clone().format("MM/DD/YYYY"),"MM/DD/YYYY")
-    //.utcOffset(SMSA.model.currentLocation.timezone+SMSA.model.tzAdjustment);
-    .utcOffset(-5) //TODO
-		var latitude=this.locationService.getLat();
-		var longitude=this.locationService.getLon();
+    	let momentCounter: moment.Moment= moment(this.dateTimeService.dateTime.clone().format("MM/DD/YYYY"),"MM/DD/YYYY")
+		//.utcOffset(SMSA.model.currentLocation.timezone+SMSA.model.tzAdjustment);
+		.utcOffset(-5) //TODO
+		let latitude: number= this.locationService.getLat();
+		let longitude: number= this.locationService.getLon();
 
 
 		//JS Date object required for SunCalc library
-		var timeAndDate;
+		let timeAndDate: Date;
 	
 		//Used to store Altitude and Azimuth of the sun at the beginning of an hour
-		var sunHourAltitude, sunHourAzimuth;
+		let sunHourAltitude: number, sunHourAzimuth: number;
 
 		this.sunPointsCtx.clearRect(0,0, this.sunPointsCanvas.width, this.sunPointsCanvas.height);
 	
 		//Loop through every hour
-		for(count=0;count<=23; count++)
-		{
+		for(let i: number=0; i<=23; i++) {
 			//Convert moment object to JS Date
 			timeAndDate=momentCounter.clone().toDate();
 
 			//Calculate altitude and azimuth
-			var sunPos=SunCalc.getPosition(/*Date*/ timeAndDate, /*Number*/ latitude, /*Number*/ longitude);
+			let sunPos: ISunCalc=SunCalc.getPosition(/*Date*/ timeAndDate, /*Number*/ latitude, /*Number*/ longitude);
 			sunHourAltitude=sunPos.altitude*180/Math.PI;
 			sunHourAzimuth=sunPos.azimuth*180/Math.PI+180;
 
 			//adjust azimuth for southern hemisphere and, if needed, the lower northern hemisphere
-			if(latitude<this.currentDeclination)
-			{
+			if(latitude<this.currentDeclination) {
 				sunHourAzimuth=(sunHourAzimuth+180)%360;
 			}
 
@@ -382,14 +380,11 @@ export class CanvasService {
 			this.sunPointsCtx.closePath();
 
 			//determine the hour label format to be printed next to each point
-			var hourString;
-      //if(SMSA.viewUI.getClockType()=="12")
-      if(true) //TODO
-			{
+			let hourString: string;
+			//if(SMSA.viewUI.getClockType()=="12")
+			if(true) { //TODO
 				hourString=momentCounter.clone().format("ha");
-			}
-			else 
-			{
+			} else {
 				hourString=momentCounter.clone().format("H");
 			}
 
@@ -405,13 +400,10 @@ export class CanvasService {
 		}
 
 		//draw directionLabels
-		var directionsLabels;
-		if(latitude>this.currentDeclination)
-		{
+		let directionsLabels: string[];
+		if(latitude>this.currentDeclination) {
 			directionsLabels=["North","East","South","West"];
-		}
-		else 
-		{
+		} else {
 			directionsLabels=["South","West","North","East"];
 		}
 		this.sunPointsCtx.fillStyle=this.textColor;
@@ -424,19 +416,17 @@ export class CanvasService {
 	  
 	  
 		//draw degree labels
-		for(var count=10; count<=90; count=count+10)
-		{
+		for(let i: number=10; i<=90; i+=10) {
 			this.sunPointsCtx.font = "10px Arial";
-			this.sunPointsCtx.fillText(count+" deg",this.sunMoonStarCanvas.width*.95,this.yCoord(count-2));
+			this.sunPointsCtx.fillText(i+" deg",this.sunMoonStarCanvas.width*.95,this.yCoord(i-2));
 		}
 	}
 
-  /*
+  	/*
 	This function will draw the moon with a given moment,
 	a latitude and longitude.
 	*/
-	private drawMoon()
-	{
+	private drawMoon(): void {
 		var latitude=this.locationService.getLat();
 		var longitude=this.locationService.getLon();
 		
@@ -492,52 +482,45 @@ export class CanvasService {
 	This function pushes random values of declination and hour displacements
 	into the respective arrays for every star to be generated.
 	*/
-	private initializeStarsArrays()
-	{
+	private initializeStarsArrays(): void {
 		//generate random declination and hour displacements
 		//Math.seed=6;
-		for(var count=0; count<this.numberOfStars; count++)
-		{
+		for(let i: number=0; i<this.numberOfStars; i++) {
 			// this.starDeclination.push(Math.seededRandom()*180-90);
-      // this.hourDisplacement.push(Math.seededRandom()*24);
-      this.starDeclination.push(Math.random()*180-90);
+      		// this.hourDisplacement.push(Math.seededRandom()*24);
+      		this.starDeclination.push(Math.random()*180-90);
 			this.hourDisplacement.push(Math.random()*24);
 		}
 	}
 
   //TODO 2) make stars vary with longitude
-	private drawStars()
-	{
-		var latitude=this.locationService.getLat();
-		var longitude=this.locationService.getLon();
+	private drawStars(): void {
+		let latitude: number=this.locationService.getLat();
+		let longitude: number=this.locationService.getLon();
 		
 		//convert moment to JS date
-		var timeAndDate=this.dateTimeService.dateTime.clone().toDate();
+		let timeAndDate: Date=this.dateTimeService.dateTime.clone().toDate();
 
 		//calculate star altitude and azimuth for every RNG based declination
 		//and hour displacement in arrays.
-		for(var i=0; i<this.starDeclination.length;i++)
-		{
-			var hour=(timeAndDate.getHours()+timeAndDate.getMinutes()/60+this.hourDisplacement[i])%24;
-			let starAltitude=180/Math.PI*Math.asin(this.cos(latitude)*this.cos(hour*15)*this.cos(this.starDeclination[i])+this.sin(latitude)*this.sin(this.starDeclination[i]));
-			let starAzimuth=180/Math.PI*Math.acos((this.sin(starAltitude)*this.sin(latitude)-this.sin(this.starDeclination[i]))/(this.cos(starAltitude)*this.cos(latitude)));
-
+		for(let i:number =0; i<this.starDeclination.length;i++) {
+			let hour: number =(timeAndDate.getHours()+timeAndDate.getMinutes()/60+this.hourDisplacement[i])%24;
+			let starAltitude:number =180/Math.PI * Math.asin(this.cos(latitude)*this.cos(hour*15)*this.cos(this.starDeclination[i]) + this.sin(latitude)*this.sin(this.starDeclination[i]));
+			let starAzimuth:number =180/Math.PI * Math.acos((this.sin(starAltitude)*this.sin(latitude)-this.sin(this.starDeclination[i]))/(this.cos(starAltitude)*this.cos(latitude)));
+ 
 			//star azimuth adjustment
-			if((hour*15)>180)
-			{
+			if((hour*15)>180) {
 				starAzimuth=360-starAzimuth;
 			}
 			starAzimuth=(starAzimuth+180)%360;
 
 			//adjust azimuth for southern hemisphere and, if needed, the lower northern hemisphere
-			if(latitude<this.currentDeclination)
-			{
+			if(latitude<this.currentDeclination) {
 				starAzimuth=(starAzimuth+180)%360;
 			}
 
 			//only draw stars with altitude above 0 degrees(above horizon)
-			if(starAltitude>0)
-			{
+			if(starAltitude>0) {
 				this.sunMoonStarCtx.beginPath();
 				this.sunMoonStarCtx.arc(this.xCoord(starAzimuth),this.yCoord(starAltitude),1,0,2*Math.PI);
 				this.sunMoonStarCtx.fillStyle = 'white';
@@ -550,40 +533,35 @@ export class CanvasService {
   /*
 	Calculate a sun color in hex given an altitude and return it.
 	*/
-	private gradientFunction(sunAltitude: number) {
-		var color;
-		if(sunAltitude>=0)
-		{
-			var red=Math.round((255-255)*Math.pow(sunAltitude/90,.25)+255);
-			var green=Math.round((255-102)*Math.pow(sunAltitude/90,.25)+102);
-			var blue=Math.round((153-0)*Math.pow(sunAltitude/90,.25)+0);
-			color="#"+red.toString(16)+green.toString(16)+"00";
-		}
-		else
-		{
+	private gradientFunction(sunAltitude: number): string {
+		let color: string;
+		if(sunAltitude>=0) {
+			let red: number=Math.round((255-255)*Math.pow(sunAltitude/90,.25)+255);
+			let green: number =Math.round((255-102)*Math.pow(sunAltitude/90,.25)+102);
+			let blue: number =Math.round((153-0)*Math.pow(sunAltitude/90,.25)+0);
+			color = "#"+red.toString(16)+green.toString(16)+"00";
+		} else {
 			color="#ff6600";
 		}
 		return color;
 	}
 
-  //convert the azimuth angle (0 to 360 degrees east of north) to
+  	//convert the azimuth angle (0 to 360 degrees east of north) to
 	//an x-coordinate on the canvas
-	private xCoord(coord)
-	{
+	private xCoord(coord): number {
 		return coord/360*this.skyCanvas.width;
 	}
 	
 	//convert altitude angle(-30 to +90) to pixel y-coordinate on the canvas
-	private yCoord(coord)
-	{
+	private yCoord(coord): number {
 		return -this.skyCanvas.height*.75/90*coord+.75*this.skyCanvas.height;
-  }
+  	}
   
-  private sin(n) {
+  private sin(n): number {
     return Math.sin(Math.PI/180*n);
   }
 
-  private cos(n) {
+  private cos(n): number {
     return Math.cos(Math.PI/180*n);
   }
 }
