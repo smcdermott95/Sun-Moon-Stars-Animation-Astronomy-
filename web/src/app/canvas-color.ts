@@ -1,8 +1,4 @@
-import { Injectable } from '@angular/core';
-@Injectable({
-    providedIn: 'root'
-  })
-export class CanvasColor {
+class CanvasColor {
     public SUN_BELOW_HORIZON = '#ff6600';
 
     public grid = {
@@ -23,3 +19,5 @@ export class CanvasColor {
         NIGHT_LIGHT_BLUE: '#4dc6ff'
     }
 }
+
+export let CanvasColors: CanvasColor = new CanvasColor()

@@ -24,6 +24,7 @@ export class AppComponent {
     this.canvasesEle = this.canvasesRef.nativeElement as HTMLElement;
     this.canvasService.setCanvas(this.canvasesEle);
     this.canvasService.init();
+    this.canvasService.drawCanvas();
     console.log("Suc");
   }
 }

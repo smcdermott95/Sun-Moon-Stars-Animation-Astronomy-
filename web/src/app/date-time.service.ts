@@ -15,6 +15,7 @@ export class DateTimeService {
   public hour12: number = 1;
   public isPM: boolean = false;
   public minute: number = 0;
+  public is24HourClock = true;
 
   private canvasService;
 
@@ -94,5 +95,10 @@ export class DateTimeService {
   public setAMPM(isPM) {
     this.isPM = String(isPM) === "true";
     this.setHour12(this.hour12);
+  }
+
+  private setClockType(is24HourClock: boolean) {
+    this.is24HourClock = is24HourClock;
+    this.canvasService.drawCanvas();
   }
 }

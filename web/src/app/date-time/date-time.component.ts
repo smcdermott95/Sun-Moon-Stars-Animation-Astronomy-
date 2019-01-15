@@ -13,7 +13,6 @@ export class DateTimeComponent implements OnInit {
   private hours12: number[] = [12];
   private hours24: number[] = [];
   private minutes: number[] = [];
-  private is24HourClock: boolean = true;
 
   constructor(private dateTimeService: DateTimeService) {
     console.log(this);
@@ -37,10 +36,6 @@ export class DateTimeComponent implements OnInit {
     for( let i: number = 0; i<=59; i++) {
       this.minutes.push(i);
     }
-  }
-
-  private setClockType(is24HourClock: boolean) {
-    this.is24HourClock = is24HourClock;
   }
 
   ngOnInit() {
