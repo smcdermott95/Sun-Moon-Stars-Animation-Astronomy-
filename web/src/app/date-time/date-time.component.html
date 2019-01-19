@@ -1,38 +1,43 @@
-<div>
-  <select  [(ngModel)]="dateTimeService.month" (ngModelChange)="dateTimeService.setMonth($event)">
-    <option *ngFor="let month of months" [value]="month">{{month | date1:"dd"}}</option>
-  </select>
-  <select  [(ngModel)]="dateTimeService.date" (ngModelChange)="dateTimeService.setDate($event)">
-    <option *ngFor="let date of datesInMonth" [value]="date">{{date | date1:"dd"}}</option>
-    <option *ngIf="dateTimeService.daysInMonth>=29" value="29">29</option>
-    <option *ngIf="dateTimeService.daysInMonth>=30" value="30">30</option>
-    <option *ngIf="dateTimeService.daysInMonth>=31" value="31">31</option>
-  </select>
-  <select  [(ngModel)]="dateTimeService.year" (ngModelChange)="dateTimeService.setYear($event)">
-    <option *ngFor="let year of years" [value]="year">{{year}}</option>
-  </select>
-</div>
-<div>
-  <select  [(ngModel)]="dateTimeService.hour" [hidden]="!dateTimeService.is24HourClock" (ngModelChange)="dateTimeService.setHour($event)">
-    <option *ngFor="let hour of hours24" [value]="hour">{{hour | date1:"dd"}}</option>
-  </select>
-  <select  [(ngModel)]="dateTimeService.hour12" [hidden]="dateTimeService.is24HourClock" (ngModelChange)="dateTimeService.setHour12($event)">
-    <option *ngFor="let hour of hours12" [value]="hour">{{hour | date1:"dd"}}</option>
-  </select>
-  <select  [(ngModel)]="dateTimeService.minute" (ngModelChange)="dateTimeService.setMinute($event)">
-    <option *ngFor="let minute of minutes" [value]="minute">{{minute | date1:"dd"}}</option>
-  </select>
-  <select [hidden]="dateTimeService.is24HourClock" [(ngModel)]="dateTimeService.isPM" (ngModelChange)="dateTimeService.setAMPM($event)">
-    <option [ngValue]="false">AM</option>
-    <option [ngValue]="true">PM</option>
-  </select>
-  <span>
-    <input type="radio" [(ngModel)]="dateTimeService.is24HourClock" [value]="true" name="clockTypeGroup" (click)="dateTimeService.setClockType(true)"> 24hr clock
-    <input type="radio" [(ngModel)]="dateTimeService.is24HourClock" [value]="false" name="clockTypeGroup" (click)="dateTimeService.setClockType(false)"> 12hr clock
-  </span>
-</div>
+<div class="card">
+  <div class="card-header"> Date & Time</div>
+  <div class="card-body">
+    <div>
+      <select  [(ngModel)]="dateTimeService.month" (ngModelChange)="dateTimeService.setMonth($event)">
+        <option *ngFor="let month of months" [value]="month">{{month | date1:"dd"}}</option>
+      </select>
+      <select  [(ngModel)]="dateTimeService.date" (ngModelChange)="dateTimeService.setDate($event)">
+        <option *ngFor="let date of datesInMonth" [value]="date">{{date | date1:"dd"}}</option>
+        <option *ngIf="dateTimeService.daysInMonth>=29" value="29">29</option>
+        <option *ngIf="dateTimeService.daysInMonth>=30" value="30">30</option>
+        <option *ngIf="dateTimeService.daysInMonth>=31" value="31">31</option>
+      </select>
+      <select  [(ngModel)]="dateTimeService.year" (ngModelChange)="dateTimeService.setYear($event)">
+        <option *ngFor="let year of years" [value]="year">{{year}}</option>
+      </select>
+    </div>
+    <div>
+      <select  [(ngModel)]="dateTimeService.hour" [hidden]="!dateTimeService.is24HourClock" (ngModelChange)="dateTimeService.setHour($event)">
+        <option *ngFor="let hour of hours24" [value]="hour">{{hour | date1:"dd"}}</option>
+      </select>
+      <select  [(ngModel)]="dateTimeService.hour12" [hidden]="dateTimeService.is24HourClock" (ngModelChange)="dateTimeService.setHour12($event)">
+        <option *ngFor="let hour of hours12" [value]="hour">{{hour | date1:"dd"}}</option>
+      </select>
+      <select  [(ngModel)]="dateTimeService.minute" (ngModelChange)="dateTimeService.setMinute($event)">
+        <option *ngFor="let minute of minutes" [value]="minute">{{minute | date1:"dd"}}</option>
+      </select>
+      <select [hidden]="dateTimeService.is24HourClock" [(ngModel)]="dateTimeService.isPM" (ngModelChange)="dateTimeService.setAMPM($event)">
+        <option [ngValue]="false">AM</option>
+        <option [ngValue]="true">PM</option>
+      </select>
+      <span>
+        <input type="radio" [(ngModel)]="dateTimeService.is24HourClock" [value]="true" name="clockTypeGroup" (click)="dateTimeService.setClockType(true)"> 24hr clock
+        <input type="radio" [(ngModel)]="dateTimeService.is24HourClock" [value]="false" name="clockTypeGroup" (click)="dateTimeService.setClockType(false)"> 12hr clock
+      </span>
+    </div>
 
-<div>
-  <span>{{ dateTimeService.month }} / {{ dateTimeService.date }} / {{ dateTimeService.year }}</span>
-  <span>{{ dateTimeService.hour }} : {{ dateTimeService.minute }}</span>
+    <div>
+      <span>{{ dateTimeService.month }} / {{ dateTimeService.date }} / {{ dateTimeService.year }}</span>
+      <span>{{ dateTimeService.hour }} : {{ dateTimeService.minute }}</span>
+    </div>
+  </div>
 </div>
