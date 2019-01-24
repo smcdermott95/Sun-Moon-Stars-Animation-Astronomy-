@@ -10,8 +10,6 @@ import { CanvasService } from './canvas.service'
 })
 export class AppComponent {
   title = 'web';
-  @ViewChild('canvasesEle') canvasesRef: ElementRef;
-  canvasesEle: HTMLElement;
 
   constructor(
     private dateTimeService: DateTimeService, 
@@ -21,10 +19,5 @@ export class AppComponent {
   }
 
   ngOnInit() {
-    this.canvasesEle = this.canvasesRef.nativeElement as HTMLElement;
-    this.canvasService.setCanvas(this.canvasesEle);
-    this.canvasService.init();
-    this.canvasService.drawCanvas();
-    console.log("Suc");
   }
 }
