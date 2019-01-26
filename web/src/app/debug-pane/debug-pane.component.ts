@@ -9,6 +9,8 @@ import { LocationService } from './../location.service';
 })
 export class DebugPaneComponent implements OnInit {
 
+  //TODO make this visible when 'localhost' is in URL or when a debug flag is set to true
+
   constructor(private dateTimeService: DateTimeService, private locationService: LocationService) { }
 
   ngOnInit() {

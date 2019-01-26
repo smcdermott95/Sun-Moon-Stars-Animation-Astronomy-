@@ -8,6 +8,7 @@ import { Date } from './date.pipe';
 import { LocationComponent } from './location/location.component';
 import { CanvasComponent } from './canvas/canvas.component';
 import { DebugPaneComponent } from './debug-pane/debug-pane.component';
+import { MapComponent } from './map/map.component';
 
 @NgModule({
   declarations: [
@@ -17,6 +18,7 @@ import { DebugPaneComponent } from './debug-pane/debug-pane.component';
     LocationComponent,
     CanvasComponent,
     DebugPaneComponent,
+    MapComponent,
   ],
   imports: [
     BrowserModule,

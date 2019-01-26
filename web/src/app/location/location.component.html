@@ -12,6 +12,8 @@
         <option [ngValue]="true">N</option>
         <option [ngValue]="false">S</option>
       </select>
+    </div>
+    <div>
       <select  [(ngModel)]="locationService.lonDeg" (ngModelChange)="locationService.setLonDeg($event)">
         <option *ngFor="let degree of horizontalDegrees" [value]="degree">{{degree | date1 }}</option>
       </select>
