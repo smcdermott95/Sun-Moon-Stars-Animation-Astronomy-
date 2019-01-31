@@ -11,10 +11,7 @@ import { CanvasService } from './canvas.service'
 export class AppComponent {
   title = 'web';
 
-  constructor(
-    private dateTimeService: DateTimeService, 
-    private locationService: LocationService, 
-    private canvasService: CanvasService) {
+  constructor() {
       console.log(this);
   }
 

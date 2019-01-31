@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CanvasService } from './canvas.service';
+import { AppService } from './app.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,15 +15,9 @@ export class LocationService {
   private lonMin: number = 0;
   private isEastHemi: boolean = false;
 
-  private canvasService: CanvasService;
-
-  constructor() { 
+  constructor(private appService: AppService) { 
     console.log(this);
     this.updateLocation();
-  }
-
-  public setCanvasService(cs: CanvasService) {
-    this.canvasService = cs;
   }
 
   public setLatDeg(latDeg) {
@@ -68,7 +62,13 @@ export class LocationService {
     this.lat = (this.isNorthHemi? 1: (-1)) * (this.latDeg + this.latMin/60);
     this.lon = (this.isEastHemi? 1: (-1)) * (this.lonDeg + this.lonMin/60);
 
-    if(this.canvasService)
-      this.canvasService.drawCanvas();
+    this.publishLocationChangeEvent();
+  }
+
+  private publishLocationChangeEvent() {
+    this.appService.changeLocation({
+      lat: this.lat, 
+      lon: this.lon
+    });
   }
 }

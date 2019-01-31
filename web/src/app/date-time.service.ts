@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import * as moment from 'moment';
-import { CanvasService } from './canvas.service';
+import { AppService, IDateChangeEvent } from './app.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,9 +17,7 @@ export class DateTimeService {
   public minute: number = 0;
   public is24HourClock = true;
 
-  private canvasService;
-
-  constructor() {
+  constructor(private appService: AppService) {
 
     console.log(this);
     this.dateTime = moment();
@@ -32,18 +30,13 @@ export class DateTimeService {
     this.hour12 = parseInt(this.dateTime.format("hh"));
     this.minute = this.dateTime.minute();
     this.isPM = this.hour >= 12;
-  }
-
-  //TODO - temporary solution to circular dependancy issue
-  public setCanvasService(cs: CanvasService) {
-      //this.canvasService = this.injector.get(CanvasService);
-      this.canvasService = cs;
+    this.publishDateChangeEvent();
   }
 
   public setDate(newDate: string) {
     this.date = parseInt(newDate);
     this.dateTime.date(this.date);
-    this.canvasService.drawCanvas();
+    this.publishDateChangeEvent();
   }
 
   public setMonth(newMonth: string) {
@@ -57,13 +50,13 @@ export class DateTimeService {
 
     this.date = oldDate<=this.daysInMonth ? (oldDate) : this.daysInMonth;
     this.dateTime.date(this.date);
-    this.canvasService.drawCanvas();
+    this.publishDateChangeEvent();
   }
 
   public setYear(newYear) {
     this.year = parseInt(newYear);
     this.dateTime.year(this.year);
-    this.canvasService.drawCanvas();
+    this.publishDateChangeEvent();
   }
 
   public setHour(newHour) {
@@ -71,7 +64,7 @@ export class DateTimeService {
     this.dateTime.hour(newHour);
     this.hour12 = parseInt(this.dateTime.format("hh"));
     this.isPM = this.hour >= 12;
-    this.canvasService.drawCanvas();
+    this.publishDateChangeEvent();
   }
 
   public setHour12(newHour) {
@@ -83,13 +76,13 @@ export class DateTimeService {
       this.hour = this.isPM ? 12 : 0;
     }
     this.dateTime.hour(this.hour);
-    this.canvasService.drawCanvas();
+    this.publishDateChangeEvent();
   }
 
   public setMinute(newMinute) {
     this.minute = parseInt(newMinute);
     this.dateTime.minute(newMinute);
-    this.canvasService.drawCanvas();
+    this.publishDateChangeEvent();
   }
 
   public setAMPM(isPM) {
@@ -99,6 +92,13 @@ export class DateTimeService {
 
   private setClockType(is24HourClock: boolean) {
     this.is24HourClock = is24HourClock;
-    this.canvasService.drawCanvas();
+    this.publishDateChangeEvent();
+  }
+
+  private publishDateChangeEvent() {
+    this.appService.changeDate({
+      newDateTime: this.dateTime, 
+      is24HourClock: this.is24HourClock
+    });
   }
 }

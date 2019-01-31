@@ -1,7 +1,6 @@
 declare var require: any;
 import { Injectable } from '@angular/core';
-import { DateTimeService } from './date-time.service';
-import { LocationService } from './location.service';
+import { AppService, IDateChangeEvent, ILocationChangeEvent } from './app.service';
 import { CanvasColors } from './canvas-color';
 var SunCalc = require('suncalc');
 import * as moment from 'moment';
@@ -48,13 +47,29 @@ export class CanvasService {
 
 	private currentDeclination: number;
 
-	private lastDrawnDate: moment.Moment;
+	private currentLocation: { lat: number, lon: number};
+	private currentDateTime: moment.Moment;
+	private is24HourClock: boolean;
+
+	private lastDrawnDateTime: moment.Moment;
 	private lastDrawnLocation: { lat: number, lon: number};
 	private lastDrawnSkyColorType: number;
 	private lastDrawnIs24HourClock: boolean;
 
-	constructor( private locationService: LocationService, private dateTimeService: DateTimeService) {
+	constructor(private appService: AppService) {
 		console.log(this);
+
+		appService.locationPanelChanged$.subscribe( (e: ILocationChangeEvent) => {
+			this.currentLocation = e;
+			if(this.currentDateTime && this.canvasesEle)
+				this.drawCanvas();
+		});
+		appService.dateChanged$.subscribe( (e: IDateChangeEvent) => {
+			this.currentDateTime = e.newDateTime;
+			this.is24HourClock = e.is24HourClock;
+			if(this.currentLocation && this.canvasesEle)
+				this.drawCanvas();
+		});
 	}
 
 	public setCanvas(element: Element): void {
@@ -66,8 +81,6 @@ export class CanvasService {
 	}
 
 	public init(): void {
-		this.dateTimeService.setCanvasService(this);
-		this.locationService.setCanvasService(this);
 		this.initializeCanvases();
 		this.initializeGraph();
 		this.initializeStarsArrays();
@@ -184,11 +197,11 @@ export class CanvasService {
 
 	public drawCanvas(): void {
 		//grab the location and date
-		let latitude: number = this.locationService.getLat();
-		let longitude: number = this.locationService.getLon();
+		let latitude: number = this.currentLocation.lat;
+		let longitude: number = this.currentLocation.lon;
 
 		//clone current date moment into JS date time
-		let currentTimeAndDate: Date = this.dateTimeService.dateTime.clone().toDate();
+		let currentTimeAndDate: Date = this.currentDateTime.clone().toDate();
 
 		//Calculate Current sun position
     	let currentSunPos: ISunPos = SunCalc.getPosition(currentTimeAndDate, latitude, longitude);
@@ -254,13 +267,13 @@ export class CanvasService {
 		//if the date has changed, the timezone has changed,
 		//or the location has changed
 		if(
-			!this.lastDrawnDate || /* never drawn */
+			!this.lastDrawnDateTime || /* never drawn */
 			!this.lastDrawnLocation ||  /* never drawn */
-			!this.dateTimeService.dateTime.isSame(this.lastDrawnDate, "date") || /* changed date*/
-			this.dateTimeService.dateTime.utcOffset() != this.lastDrawnDate.utcOffset() || /* changed timezone */
-			this.locationService.getLat() != this.lastDrawnLocation.lat || /* changed lattitude */
-			this.locationService.getLon() != this.lastDrawnLocation.lon || /* changed longitude */
-			this.dateTimeService.is24HourClock != this.lastDrawnIs24HourClock /* changed clock type */
+			!this.currentDateTime.isSame(this.lastDrawnDateTime, "date") || /* changed date*/
+			this.currentDateTime.utcOffset() != this.lastDrawnDateTime.utcOffset() || /* changed timezone */
+			this.currentLocation.lat != this.lastDrawnLocation.lat || /* changed lattitude */
+			this.currentLocation.lon != this.lastDrawnLocation.lon || /* changed longitude */
+			this.is24HourClock != this.lastDrawnIs24HourClock /* changed clock type */
 		) {
 			//calculate a new declination
 			this.currentDeclination=SunCalc.getPosition(/*Date*/ currentTimeAndDate, 90, 0).altitude*180/Math.PI;
@@ -342,9 +355,9 @@ export class CanvasService {
 		// SMSA.viewUI.sunAltitudeOut.innerHTML=sunAltitude.toFixed(3);
     	// SMSA.viewUI.sunAzimuthOut.innerHTML=sunAzimuth.toFixed(3);
     
-    	this.lastDrawnDate = this.dateTimeService.dateTime.clone();
-		this.lastDrawnLocation = { lat: this.locationService.getLat(), lon: this.locationService.getLon() };
-		this.lastDrawnIs24HourClock = this.dateTimeService.is24HourClock;
+    	this.lastDrawnDateTime = this.currentDateTime.clone();
+		this.lastDrawnLocation = this.currentLocation;
+		this.lastDrawnIs24HourClock = this.is24HourClock;
 	}
 
   	/*
@@ -353,11 +366,11 @@ export class CanvasService {
 	*/
 	private plotSunPoints(): void {
 		//A moment counter that will be incremented every hour
-    	let momentCounter: moment.Moment = moment(this.dateTimeService.dateTime.clone().format("MM/DD/YYYY"),"MM/DD/YYYY")
+    	let momentCounter: moment.Moment = moment(this.currentDateTime.clone().format("MM/DD/YYYY"),"MM/DD/YYYY")
 		//.utcOffset(SMSA.model.currentLocation.timezone+SMSA.model.tzAdjustment);
 		.utcOffset(-5) //TODO
-		let latitude: number = this.locationService.getLat();
-		let longitude: number = this.locationService.getLon();
+		let latitude: number = this.currentLocation.lat;
+		let longitude: number = this.currentLocation.lon;
 
 
 		//JS Date object required for SunCalc library
@@ -392,7 +405,7 @@ export class CanvasService {
 
 			//determine the hour label format to be printed next to each point
 			let hourString: string;
-			if(!this.dateTimeService.is24HourClock) {
+			if(!this.is24HourClock) {
 				hourString = momentCounter.clone().format("ha");
 			} else {
 				hourString = momentCounter.clone().format("H");
@@ -435,11 +448,11 @@ export class CanvasService {
 	a latitude and longitude.
 	*/
 	private drawMoon(): void {
-		let latitude: number = this.locationService.getLat();
-		let longitude: number = this.locationService.getLon();
+		let latitude: number = this.currentLocation.lat;
+		let longitude: number = this.currentLocation.lon;
 		
 		//convert moment to JS date
-		let timeAndDate: Date = this.dateTimeService.dateTime.clone().toDate();
+		let timeAndDate: Date = this.currentDateTime.clone().toDate();
 
 		//calculate moon alitude and azimuth
 		let moonPos: IMoonPos = SunCalc.getMoonPosition(/*Date*/ timeAndDate, /*Number*/ latitude, /*Number*/ longitude);
@@ -502,11 +515,11 @@ export class CanvasService {
 
   //TODO 2) make stars vary with longitude
 	private drawStars(): void {
-		let latitude: number = this.locationService.getLat();
-		let longitude: number = this.locationService.getLon();
+		let latitude: number = this.currentLocation.lat;
+		let longitude: number = this.currentLocation.lon;
 		
 		//convert moment to JS date
-		let timeAndDate: Date = this.dateTimeService.dateTime.clone().toDate();
+		let timeAndDate: Date = this.currentDateTime.clone().toDate();
 
 		//calculate star altitude and azimuth for every RNG based declination
 		//and hour displacement in arrays.
