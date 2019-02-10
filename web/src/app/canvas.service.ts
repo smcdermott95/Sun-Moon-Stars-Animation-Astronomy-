@@ -47,12 +47,12 @@ export class CanvasService {
 
 	private currentDeclination: number;
 
-	private currentLocation: { lat: number, lon: number};
+	private currentLocation: { lat: number, lon: number, timezone: number};
 	private currentDateTime: moment.Moment;
 	private is24HourClock: boolean;
 
 	private lastDrawnDateTime: moment.Moment;
-	private lastDrawnLocation: { lat: number, lon: number};
+	private lastDrawnLocation: { lat: number, lon: number, timezone: number};
 	private lastDrawnSkyColorType: number;
 	private lastDrawnIs24HourClock: boolean;
 
@@ -61,8 +61,10 @@ export class CanvasService {
 
 		appService.locationPanelChanged$.subscribe( (e: ILocationChangeEvent) => {
 			this.currentLocation = e;
-			if(this.currentDateTime && this.canvasesEle)
+			if(this.currentDateTime && this.canvasesEle) {
+				this.currentDateTime.utcOffset(e.timezone);
 				this.drawCanvas();
+			}
 		});
 		appService.dateChanged$.subscribe( (e: IDateChangeEvent) => {
 			this.currentDateTime = e.newDateTime;
@@ -366,9 +368,7 @@ export class CanvasService {
 	*/
 	private plotSunPoints(): void {
 		//A moment counter that will be incremented every hour
-    	let momentCounter: moment.Moment = moment(this.currentDateTime.clone().format("MM/DD/YYYY"),"MM/DD/YYYY")
-		//.utcOffset(SMSA.model.currentLocation.timezone+SMSA.model.tzAdjustment);
-		.utcOffset(-5) //TODO
+		let momentCounter = this.currentDateTime.clone().hours(0).minutes(0);
 		let latitude: number = this.currentLocation.lat;
 		let longitude: number = this.currentLocation.lon;
 

@@ -10,6 +10,15 @@ export interface IDateChangeEvent {
 export interface ILocationChangeEvent {
   lat: number;
   lon: number;
+  timezone: number;
+}
+
+export interface ITimezoneInfo { //TODO: maybe find another place for this
+  dstOffset: number;
+  rawOffset: number; /* seconds */
+  status: string; // 'OK' or 'ZERO_RESULTS'
+  timeZoneId: string;
+  timeZoneName: string;
 }
 
 @Injectable({
@@ -31,6 +40,10 @@ export class AppService {
 
   public changeLocation(e: ILocationChangeEvent) {
     this.locationPanelChangedSource.next(e);
+  }
+
+  public changeMapLocation(e: ILocationChangeEvent) {
+    this.mapLocationChangedSource.next(e);
   }
 
   constructor() { 

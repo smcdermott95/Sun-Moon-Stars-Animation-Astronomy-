@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as moment from 'moment';
-import { AppService, IDateChangeEvent } from './app.service';
+import { AppService, IDateChangeEvent, ILocationChangeEvent } from './app.service';
+import { Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -17,10 +18,30 @@ export class DateTimeService {
   public minute: number = 0;
   public is24HourClock = true;
 
+  private updateViewSource: Subject<void> = new Subject<void>();
+  public updateView$ = this.updateViewSource.asObservable();
+
   constructor(private appService: AppService) {
 
     console.log(this);
-    this.dateTime = moment();
+    this.setDateTime(moment().utcOffset(-5));
+    this.publishDateChangeEvent();
+
+    appService.locationPanelChanged$.subscribe( (e: ILocationChangeEvent) => {
+      this.dateTime.utcOffset(e.timezone);
+      this.setDateTime(this.dateTime);
+      this.publishUpdateView();
+    });
+
+    appService.mapLocationChanged$.subscribe( (e: ILocationChangeEvent) => { 
+      this.dateTime.utcOffset(e.timezone);
+      this.setDateTime(this.dateTime);
+      this.publishUpdateView();
+    });
+  }
+
+  private setDateTime(dateTime: moment.Moment) {
+    this.dateTime = dateTime;
     this.date = this.dateTime.date();
     this.month = this.dateTime.month()+1;
     this.year = this.dateTime.year();
@@ -30,7 +51,6 @@ export class DateTimeService {
     this.hour12 = parseInt(this.dateTime.format("hh"));
     this.minute = this.dateTime.minute();
     this.isPM = this.hour >= 12;
-    this.publishDateChangeEvent();
   }
 
   public setDate(newDate: string) {
@@ -100,5 +120,9 @@ export class DateTimeService {
       newDateTime: this.dateTime, 
       is24HourClock: this.is24HourClock
     });
+  }
+
+  private publishUpdateView() {
+    this.updateViewSource.next();
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { DateTimeService } from './../date-time.service';
 
 @Component({
@@ -14,7 +14,7 @@ export class DateTimeComponent implements OnInit {
   private hours24: number[] = [];
   private minutes: number[] = [];
 
-  constructor(private dateTimeService: DateTimeService) {
+  constructor(private dateTimeService: DateTimeService, private changeDetectorRef: ChangeDetectorRef) {
     console.log(this);
     for( let i: number = 1; i<=12; i++) {
       this.months.push(i);
@@ -36,6 +36,10 @@ export class DateTimeComponent implements OnInit {
     for( let i: number = 0; i<=59; i++) {
       this.minutes.push(i);
     }
+
+    dateTimeService.updateView$.subscribe( () => {
+      changeDetectorRef.detectChanges();
+		});
   }
 
   ngOnInit() {

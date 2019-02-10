@@ -18,7 +18,6 @@ export class CanvasComponent implements OnInit {
     this.canvasesEle = this.canvasesRef.nativeElement as HTMLElement;
     this.canvasService.setCanvas(this.canvasesEle);
     this.canvasService.init();
-    this.canvasService.drawCanvas();
   }
 
 }

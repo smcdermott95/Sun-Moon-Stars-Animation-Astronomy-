@@ -5,7 +5,7 @@
       <select  [(ngModel)]="locationService.latDeg" (ngModelChange)="locationService.setLatDeg($event)">
         <option *ngFor="let degree of verticalDegrees" [value]="degree">{{degree | date1 }}</option>
       </select>
-      <select  [(ngModel)]="locationService.latMin" (ngModelChange)="locationService.setLatMin($event)">
+      <select [(ngModel)]="locationService.latMin" (ngModelChange)="locationService.setLatMin($event)">
         <option *ngFor="let minute of minutes" [value]="minute">{{minute | date1 }}</option>
       </select>
       <select [(ngModel)]="locationService.isNorthHemi" (ngModelChange)="locationService.setVerticalHemi($event)">
@@ -17,12 +17,17 @@
       <select  [(ngModel)]="locationService.lonDeg" (ngModelChange)="locationService.setLonDeg($event)">
         <option *ngFor="let degree of horizontalDegrees" [value]="degree">{{degree | date1 }}</option>
       </select>
-      <select  [(ngModel)]="locationService.lonMin" (ngModelChange)="locationService.setLonMin($event)">
+      <select [(ngModel)]="locationService.lonMin" (ngModelChange)="locationService.setLonMin($event)">
         <option *ngFor="let minute of minutes" [value]="minute">{{minute | date1 }}</option>
       </select>
       <select [(ngModel)]="locationService.isEastHemi" (ngModelChange)="locationService.setHorizontalHemi($event)">
         <option [ngValue]="false">W</option>
         <option [ngValue]="true">E</option>
+      </select>
+    </div>
+    <div>
+      <select  [(ngModel)]="locationService.timezone" (ngModelChange)="locationService.setTimezone($event)">
+        <option *ngFor="let timezone of timezones" [value]="timezone">{{timezone}}</option>
       </select>
     </div>
   </div>
