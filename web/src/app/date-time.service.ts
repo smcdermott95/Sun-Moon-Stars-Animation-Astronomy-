@@ -115,6 +115,11 @@ export class DateTimeService {
     this.publishDateChangeEvent();
   }
 
+  private setTimeAsCurrent() {
+    this.setDateTime(moment().utcOffset(this.dateTime.utcOffset()));
+    this.publishDateChangeEvent();
+  }
+
   private publishDateChangeEvent() {
     this.appService.changeDate({
       newDateTime: this.dateTime, 

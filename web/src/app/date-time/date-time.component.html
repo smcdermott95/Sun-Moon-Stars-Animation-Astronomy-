@@ -29,6 +29,7 @@
         <option [ngValue]="false">AM</option>
         <option [ngValue]="true">PM</option>
       </select>
+      <button type="button" class="btn btn-primary" (click)="dateTimeService.setTimeAsCurrent()">Use Current Time</button>
       <div>
         <input type="radio" [(ngModel)]="dateTimeService.is24HourClock" [value]="true" name="clockTypeGroup" (click)="dateTimeService.setClockType(true)"> 24hr clock
         <input type="radio" [(ngModel)]="dateTimeService.is24HourClock" [value]="false" name="clockTypeGroup" (click)="dateTimeService.setClockType(false)"> 12hr clock
