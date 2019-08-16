@@ -8,7 +8,7 @@ import { CanvasService } from './../canvas.service'
 })
 export class CanvasComponent implements OnInit {
 
-  @ViewChild('canvasesEle') canvasesRef: ElementRef;
+  @ViewChild('canvasesEle', { static: true }) canvasesRef: ElementRef;
   canvasesEle: HTMLElement;
 
   constructor(private canvasService: CanvasService) { }

@@ -9,6 +9,7 @@ import { LocationComponent } from './location/location.component';
 import { CanvasComponent } from './canvas/canvas.component';
 import { DebugPaneComponent } from './debug-pane/debug-pane.component';
 import { MapComponent } from './map/map.component';
+import { AnimationComponent } from './animation/animation.component';
 
 @NgModule({
   declarations: [
@@ -19,6 +20,7 @@ import { MapComponent } from './map/map.component';
     CanvasComponent,
     DebugPaneComponent,
     MapComponent,
+    AnimationComponent,
   ],
   imports: [
     BrowserModule,

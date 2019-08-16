@@ -9,7 +9,7 @@ import { AppService, IDateChangeEvent, ILocationChangeEvent, ITimezoneInfo } fro
 
 export class MapComponent implements OnInit {
 
-  @ViewChild('mapEle') mapRef: ElementRef;
+  @ViewChild('mapEle', { static: true }) mapRef: ElementRef;
   private mapEle: HTMLElement;
   private mapReady: boolean;
   private location: google.maps.LatLng;

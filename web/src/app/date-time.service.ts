@@ -17,6 +17,7 @@ export class DateTimeService {
   public isPM: boolean = false;
   public minute: number = 0;
   public is24HourClock = true;
+  private timer: NodeJS.Timer;
 
   private updateViewSource: Subject<void> = new Subject<void>();
   public updateView$ = this.updateViewSource.asObservable();
@@ -37,6 +38,16 @@ export class DateTimeService {
       this.dateTime.utcOffset(e.timezone);
       this.setDateTime(this.dateTime);
       this.publishUpdateView();
+    });
+
+    appService.playButtonPressed$.subscribe( (isStart: boolean)=> {
+      if(isStart)
+      {
+        this.timer = this.autoIncrement();
+      }
+      else {
+        clearInterval(this.timer);
+      }
     });
   }
 
@@ -129,5 +140,15 @@ export class DateTimeService {
 
   private publishUpdateView() {
     this.updateViewSource.next();
+  }
+
+  private autoIncrement(): NodeJS.Timer {
+      return setInterval(() => {
+
+        this.dateTime.add(2, 'minutes');
+        this.setDateTime(this.dateTime);
+        this.publishUpdateView();
+        this.publishDateChangeEvent();
+      }, 16);
   }
 }

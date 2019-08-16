@@ -357,7 +357,7 @@ export class CanvasService {
 		// SMSA.viewUI.sunAltitudeOut.innerHTML=sunAltitude.toFixed(3);
     	// SMSA.viewUI.sunAzimuthOut.innerHTML=sunAzimuth.toFixed(3);
     
-    	this.lastDrawnDateTime = this.currentDateTime.clone();
+    this.lastDrawnDateTime = this.currentDateTime.clone();
 		this.lastDrawnLocation = this.currentLocation;
 		this.lastDrawnIs24HourClock = this.is24HourClock;
 	}

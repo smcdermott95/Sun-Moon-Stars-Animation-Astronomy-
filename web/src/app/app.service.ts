@@ -29,10 +29,12 @@ export class AppService {
   private dateChangedSource: Subject<IDateChangeEvent> = new ReplaySubject<IDateChangeEvent>();
   private locationPanelChangedSource: Subject<ILocationChangeEvent> = new ReplaySubject<ILocationChangeEvent>();
   private mapLocationChangedSource: Subject<ILocationChangeEvent> = new ReplaySubject<ILocationChangeEvent>();
+  private playButtonPressedSource: Subject<boolean> = new ReplaySubject<boolean>();
 
   public dateChanged$ = this.dateChangedSource.asObservable();
   public locationPanelChanged$ = this.locationPanelChangedSource.asObservable();
   public mapLocationChanged$ = this.mapLocationChangedSource.asObservable();
+  public playButtonPressed$ = this.playButtonPressedSource.asObservable(); 
 
   public changeDate(e: IDateChangeEvent) {
     this.dateChangedSource.next(e);
@@ -44,6 +46,11 @@ export class AppService {
 
   public changeMapLocation(e: ILocationChangeEvent) {
     this.mapLocationChangedSource.next(e);
+  }
+
+  public playButtonPressed(isStart: boolean)
+  {
+    this.playButtonPressedSource.next(isStart);
   }
 
   constructor() { 
